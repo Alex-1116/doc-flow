@@ -2,6 +2,7 @@ import os
 import time
 import logging
 import asyncio
+import httpx
 from typing import Optional, List, Dict, Any
 from functools import wraps
 
@@ -15,7 +16,7 @@ from langchain.prompts import PromptTemplate
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 
-from .config import settings
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -108,10 +109,27 @@ class RAGEngine:
         logger.info("ChromaDB 连接成功")
         return client
 
-    @retry_with_backoff(max_retries=3, initial_delay=1.0)
+    @retry_with_backoff(max_retries=10, initial_delay=5.0)
     def _init_ollama(self) -> tuple:
         """初始化 Ollama 连接，带重试机制"""
         logger.info(f"正在连接 Ollama: {settings.OLLAMA_BASE_URL}")
+
+        # 检查所需模型是否已经拉取
+        required_models = [settings.MODEL_NAME, settings.EMBEDDING_MODEL]
+        try:
+            with httpx.Client(timeout=10.0) as client:
+                response = client.get(f"{settings.OLLAMA_BASE_URL}/api/tags")
+                response.raise_for_status()
+                available_models = [m["name"] for m in response.json().get("models", [])]
+                
+                for req_model in required_models:
+                    if not any(req_model == am or am.startswith(f"{req_model}:") for am in available_models):
+                        error_msg = f"Ollama 模型未找到: {req_model}。请确认已运行 'ollama pull {req_model}' 或等待自动拉取完成。"
+                        logger.warning(error_msg)
+                        raise ValueError(error_msg)
+        except Exception as e:
+            logger.error(f"检查 Ollama 模型状态失败: {e}")
+            raise
 
         embeddings = OllamaEmbeddings(
             base_url=settings.OLLAMA_BASE_URL,
@@ -122,36 +140,41 @@ class RAGEngine:
             base_url=settings.OLLAMA_BASE_URL,
             model=settings.MODEL_NAME,
             temperature=0,
-            timeout=settings.OLLAMA_TIMEOUT,
+            # Langchain 中的 ChatOllama 没有 timeout 参数，只有 request_timeout 参数或者不传
+            # 我们直接去掉 timeout 参数以避免与某些库版本不兼容，使用外部超时控制即可
         )
 
         # 测试嵌入模型可用性
-        try:
-            embeddings.embed_query("test")
-            logger.info(f"Ollama 嵌入模型 {settings.EMBEDDING_MODEL} 可用")
-        except Exception as e:
-            logger.warning(f"嵌入模型测试失败: {e}")
+        embeddings.embed_query("test")
+        logger.info(f"Ollama 嵌入模型 {settings.EMBEDDING_MODEL} 可用")
 
-        logger.info("Ollama 连接成功")
+        # 测试对话模型可用性
+        llm.invoke("test")
+        logger.info(f"Ollama 对话模型 {settings.MODEL_NAME} 可用")
+
+        logger.info("Ollama 连接并验证成功")
         return embeddings, llm
 
     def initialize(self) -> bool:
         """执行实际初始化，返回是否成功"""
-        if self._client is not None:
+        if self.is_initialized:
             return True
 
         try:
             # 初始化 ChromaDB
-            self._client = self._init_chroma_client()
+            if self._client is None:
+                self._client = self._init_chroma_client()
 
             # 初始化 Ollama
-            self._embeddings, self._llm = self._init_ollama()
+            if self._embeddings is None or self._llm is None:
+                self._embeddings, self._llm = self._init_ollama()
 
             # 初始化文本分割器
-            self._text_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=settings.CHUNK_SIZE,
-                chunk_overlap=settings.CHUNK_OVERLAP,
-            )
+            if self._text_splitter is None:
+                self._text_splitter = RecursiveCharacterTextSplitter(
+                    chunk_size=settings.CHUNK_SIZE,
+                    chunk_overlap=settings.CHUNK_OVERLAP,
+                )
 
             self._init_error = None
             logger.info("RAG 引擎初始化成功")
@@ -319,19 +342,26 @@ class RAGEngine:
             status["status"] = "degraded"
 
         # 检查 Ollama
-        if self._embeddings:
-            try:
-                # 测试嵌入
-                await asyncio.get_event_loop().run_in_executor(
-                    None, self._embeddings.embed_query, "health_check"
-                )
-                status["ollama"]["connected"] = True
-                status["ollama"]["models"] = [settings.EMBEDDING_MODEL, settings.MODEL_NAME]
-            except Exception as e:
-                status["ollama"]["error"] = str(e)
-                status["status"] = "degraded"
-        else:
-            status["ollama"]["error"] = "未初始化"
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                response = await client.get(f"{settings.OLLAMA_BASE_URL}/api/tags")
+                response.raise_for_status()
+                available_models = [m["name"] for m in response.json().get("models", [])]
+                status["ollama"]["models"] = available_models
+                
+                required_models = [settings.MODEL_NAME, settings.EMBEDDING_MODEL]
+                missing_models = [
+                    rm for rm in required_models
+                    if not any(rm == am or am.startswith(f"{rm}:") for am in available_models)
+                ]
+                
+                if missing_models:
+                    status["ollama"]["error"] = f"缺失必要模型: {', '.join(missing_models)}"
+                    status["status"] = "degraded"
+                else:
+                    status["ollama"]["connected"] = True
+        except Exception as e:
+            status["ollama"]["error"] = str(e)
             status["status"] = "degraded"
 
         return status

@@ -1,8 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, FileText, AlertCircle, CheckCircle } from 'lucide-react';
-import axios from 'axios';
-import { API_ENDPOINTS, REQUEST_TIMEOUT } from '../config/api';
+import { documentApi } from '../../api/document';
 
 interface FileUploadProps {
   onSuccess: (doc: { doc_id: string; filename: string; chunks: number }) => void;
@@ -24,19 +23,11 @@ export default function FileUpload({ onSuccess }: FileUploadProps) {
     setSuccess(false);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await axios.post(API_ENDPOINTS.upload, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        timeout: REQUEST_TIMEOUT,
-      });
+      const response = await documentApi.upload(file);
 
       setSuccess(true);
       setTimeout(() => {
-        onSuccess(response.data);
+        onSuccess(response);
         setSuccess(false);
       }, 1000);
     } catch (err: any) {

@@ -14,6 +14,21 @@ services:
       retries: 10
       start_period: 60s
 
+  ollama-pull:
+    image: ollama/ollama:latest
+    container_name: docflow-ollama-pull
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    depends_on:
+      ollama:
+        condition: service_healthy
+    entrypoint: /bin/sh
+    command: >
+      -c "echo 'Pulling models...' && 
+             ollama pull llama3 && 
+             ollama pull bge-m3 && 
+             echo 'Models pulled successfully!'"
+
   chromadb:
     image: chromadb/chroma:0.5.0
     container_name: docflow-chromadb
@@ -55,10 +70,10 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
 
   frontend:
     build: ./frontend

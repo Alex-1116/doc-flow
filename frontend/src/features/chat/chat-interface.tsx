@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import axios from 'axios';
-import { API_ENDPOINTS, REQUEST_TIMEOUT } from '../config/api';
+import { documentApi } from '../../api/document';
 
 interface Message {
   id: string;
@@ -49,22 +48,13 @@ export default function ChatInterface({ documents }: ChatInterfaceProps) {
     setLoading(true);
 
     try {
-      const response = await axios.post(
-        API_ENDPOINTS.query,
-        {
-          question: input,
-          k: 4,
-        },
-        {
-          timeout: REQUEST_TIMEOUT,
-        }
-      );
+      const response = await documentApi.query(input, 4);
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: response.data.answer,
-        sources: response.data.sources,
+        content: response.answer,
+        sources: response.sources,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
