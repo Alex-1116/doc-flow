@@ -1,20 +1,43 @@
+import logging
 import os
 from contextlib import asynccontextmanager
+from typing import Optional
 
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 from app.config import settings
 from app.rag import rag_engine
 from app.parsers import DocumentParser, save_uploaded_file, cleanup_file
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
+
+limiter = Limiter(key_func=get_remote_address)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    logger.info("Starting DocFlow service...")
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+
+    logger.info("Initializing RAG Engine in lifespan...")
+    try:
+        rag_engine.initialize()
+        logger.info("RAG Engine initialized successfully in lifespan")
+    except Exception as e:
+        logger.error(f"RAG Engine initialization failed (will retry on first access): {e}")
+
     yield
+    logger.info("Shutting down DocFlow service...")
 
 
 app = FastAPI(
@@ -23,6 +46,9 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -42,19 +68,30 @@ class HealthResponse(BaseModel):
     status: str
     ollama: str
     chromadb: str
+    details: Optional[str] = None
 
 
 @app.get("/api/health", response_model=HealthResponse)
 async def health_check():
+    healthy, details = rag_engine.health_check()
+    if healthy:
+        return HealthResponse(
+            status="ok",
+            ollama="ok",
+            chromadb="ok",
+            details=details,
+        )
     return HealthResponse(
-        status="ok",
-        ollama=settings.OLLAMA_BASE_URL,
-        chromadb=f"{settings.CHROMA_HOST}:{settings.CHROMA_PORT}",
+        status="degraded",
+        ollama="error" if "Ollama" in details else "ok",
+        chromadb="error" if "ChromaDB" in details else "ok",
+        details=details,
     )
 
 
 @app.post("/api/documents/upload")
-async def upload_document(file: UploadFile = File(...)):
+@limiter.limit("5/minute")
+async def upload_document(request: Request, file: UploadFile = File(...)):
     if not file.filename:
         raise HTTPException(status_code=400, detail="请选择文件")
 
@@ -64,6 +101,7 @@ async def upload_document(file: UploadFile = File(...)):
             detail=f"不支持的文件格式。支持格式: {', '.join(DocumentParser.get_supported_formats())}",
         )
 
+    temp_path = None
     try:
         content = await file.read()
 
@@ -71,12 +109,13 @@ async def upload_document(file: UploadFile = File(...)):
             raise HTTPException(status_code=400, detail="文件过大")
 
         temp_path = save_uploaded_file(content, file.filename)
+        logger.info(f"Processing file: {file.filename} -> {temp_path}")
 
         documents, doc_id, metadata = DocumentParser.parse(temp_path, file.filename)
 
         chunk_count, vector_ids = rag_engine.add_documents(documents, [metadata])
 
-        cleanup_file(temp_path)
+        logger.info(f"Successfully processed {file.filename}: {chunk_count} chunks")
 
         return JSONResponse(
             {
@@ -88,24 +127,34 @@ async def upload_document(file: UploadFile = File(...)):
         )
 
     except Exception as e:
+        logger.error(f"Error processing file {file.filename if file else 'unknown'}: {e}")
         raise HTTPException(status_code=500, detail=f"处理文件失败: {str(e)}")
+    finally:
+        if temp_path:
+            cleanup_file(temp_path)
+            logger.debug(f"Cleaned up temp file: {temp_path}")
 
 
 @app.post("/api/query")
-async def query_documents(request: QueryRequest):
+@limiter.limit("20/minute")
+async def query_documents(request: Request, query_request: QueryRequest):
     try:
-        result = rag_engine.query(request.question, request.k)
+        logger.info(f"Processing query: {query_request.question[:50]}...")
+        result = rag_engine.query(query_request.question, query_request.k)
         return JSONResponse(result)
     except Exception as e:
+        logger.error(f"Query failed: {e}")
         raise HTTPException(status_code=500, detail=f"查询失败: {str(e)}")
 
 
 @app.post("/api/summarize/{doc_id}")
-async def summarize_document(doc_id: str):
+@limiter.limit("10/minute")
+async def summarize_document(request: Request, doc_id: str):
     try:
         summary = rag_engine.summarize(doc_id)
         return JSONResponse({"doc_id": doc_id, "summary": summary})
     except Exception as e:
+        logger.error(f"Summarize failed: {e}")
         raise HTTPException(status_code=500, detail=f"生成摘要失败: {str(e)}")
 
 
@@ -114,7 +163,7 @@ async def delete_document(doc_id: str):
     success = rag_engine.delete_document(doc_id)
     if success:
         return JSONResponse({"status": "success", "doc_id": doc_id})
-    raise HTTPException(status_code=404, detail="文档不存在")
+    raise HTTPException(status_code=404, detail="文档不存在或删除失败")
 
 
 @app.get("/api/formats")
@@ -130,4 +179,10 @@ async def get_supported_formats():
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("main:app", host="0.0.0.0", port=8080, reload=True)
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=8080,
+        reload=True,
+        timeout_keep_alive=120,
+    )
