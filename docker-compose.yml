@@ -1,15 +1,21 @@
 services:
   ollama:
-    image: ollama/ollama:latest
+    image: ollama/ollama:0.3.12
     container_name: docflow-ollama
     ports:
       - "11434:11434"
     volumes:
       - ollama-data:/root/.ollama
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "ollama", "ps"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 30s
 
   chromadb:
-    image: chromadb/chroma:0.4.24
+    image: chromadb/chroma:0.5.13
     container_name: docflow-chromadb
     ports:
       - "8000:8000"
@@ -19,6 +25,12 @@ services:
       - IS_PERSISTENT=TRUE
       - ANONYMIZED_TELEMETRY=FALSE
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import chromadb; client = chromadb.HttpClient(host='localhost', port=8000); client.heartbeat(); print('OK')"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 10s
 
   backend:
     build: ./backend
@@ -30,9 +42,17 @@ services:
       - CHROMA_HOST=chromadb
       - CHROMA_PORT=8000
     depends_on:
-      - ollama
-      - chromadb
+      chromadb:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   frontend:
     build: ./frontend
@@ -40,9 +60,10 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - VITE_API_URL=http://localhost:8080
+      - API_URL=http://localhost:8080
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
