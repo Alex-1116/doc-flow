@@ -13,3 +13,4 @@ pydantic-settings==2.2.1
 aiofiles==23.2.1
 markdown==3.6
 docx2txt==0.8
+requests==2.31.0

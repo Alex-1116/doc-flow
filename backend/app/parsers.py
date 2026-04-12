@@ -1,4 +1,5 @@
 import os
+import logging
 import uuid
 from pathlib import Path
 from langchain_core.documents import Document
@@ -10,6 +11,8 @@ from langchain_community.document_loaders import (
 )
 
 from .config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class DocumentParser:
@@ -39,8 +42,13 @@ class DocumentParser:
             raise ValueError(f"不支持的文件格式: {ext}")
 
         loader_class = cls.SUPPORTED_FORMATS[ext]
-        loader = loader_class(str(file_path))
-        documents = loader.load()
+        
+        try:
+            loader = loader_class(str(file_path))
+            documents = loader.load()
+        except Exception as e:
+            logger.error(f"Failed to load document {file_path}: {e}", exc_info=True)
+            raise
 
         doc_id = str(uuid.uuid4())
         filename = original_filename or file_path.name
@@ -55,6 +63,7 @@ class DocumentParser:
         for doc in documents:
             doc.metadata.update(metadata)
 
+        logger.info(f"Parsed document: {filename}, {len(documents)} sections")
         return documents, doc_id, metadata
 
 
@@ -66,14 +75,23 @@ def save_uploaded_file(file_content: bytes, filename: str) -> str:
     ext = Path(filename).suffix
     save_path = upload_dir / f"{file_id}{ext}"
 
-    with open(save_path, "wb") as f:
-        f.write(file_content)
-
-    return str(save_path)
+    try:
+        with open(save_path, "wb") as f:
+            f.write(file_content)
+        logger.info(f"Saved uploaded file: {save_path}")
+        return str(save_path)
+    except Exception as e:
+        logger.error(f"Failed to save file {filename}: {e}", exc_info=True)
+        raise
 
 
 def cleanup_file(file_path: str):
+    if not file_path:
+        return
+    
     try:
-        os.remove(file_path)
-    except Exception:
-        pass
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            logger.info(f"Cleaned up file: {file_path}")
+    except Exception as e:
+        logger.warning(f"Failed to cleanup file {file_path}: {e}")
