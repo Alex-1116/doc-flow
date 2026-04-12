@@ -2,8 +2,9 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import axios from 'axios';
+import { getApiUrl } from '../config';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_URL = getApiUrl();
 
 interface Message {
   id: string;
@@ -63,11 +64,12 @@ export default function ChatInterface({ documents }: ChatInterfaceProps) {
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
-    } catch (err) {
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { detail?: string } }; message?: string };
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: '抱歉，处理您的问题时出现了错误，请稍后重试。',
+        content: axiosError.response?.data?.detail || axiosError.message || '抱歉，处理您的问题时出现了错误，请稍后重试。',
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {

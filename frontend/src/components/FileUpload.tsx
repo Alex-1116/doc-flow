@@ -2,8 +2,9 @@ import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, FileText, AlertCircle, CheckCircle } from 'lucide-react';
 import axios from 'axios';
+import { getApiUrl } from '../config';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_URL = getApiUrl();
 
 interface FileUploadProps {
   onSuccess: (doc: { doc_id: string; filename: string; chunks: number }) => void;
@@ -39,8 +40,9 @@ export default function FileUpload({ onSuccess }: FileUploadProps) {
         onSuccess(response.data);
         setSuccess(false);
       }, 1000);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || '上传失败，请重试');
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { detail?: string } }; message?: string };
+      setError(axiosError.response?.data?.detail || axiosError.message || '上传失败，请重试');
     } finally {
       setUploading(false);
     }

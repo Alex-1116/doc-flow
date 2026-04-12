@@ -1,4 +1,5 @@
 import os
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, File, UploadFile, HTTPException
@@ -10,10 +11,24 @@ from app.config import settings
 from app.rag import rag_engine
 from app.parsers import DocumentParser, save_uploaded_file, cleanup_file
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+    logger.info(f"Upload directory created: {settings.UPLOAD_DIR}")
+    
+    try:
+        health = rag_engine.health_check()
+        logger.info(f"Initial health check: {health}")
+    except Exception as e:
+        logger.warning(f"Initial health check failed (services may not be ready): {e}")
+    
     yield
 
 
@@ -40,16 +55,24 @@ class QueryRequest(BaseModel):
 
 class HealthResponse(BaseModel):
     status: str
-    ollama: str
-    chromadb: str
+    chromadb: dict
+    ollama: dict
 
 
 @app.get("/api/health", response_model=HealthResponse)
 async def health_check():
+    health = rag_engine.health_check()
+    
+    overall_status = "ok"
+    if health["chromadb"]["status"] == "error" or health["ollama"]["status"] == "error":
+        overall_status = "error"
+    elif health["chromadb"]["status"] == "warning" or health["ollama"]["status"] == "warning":
+        overall_status = "warning"
+    
     return HealthResponse(
-        status="ok",
-        ollama=settings.OLLAMA_BASE_URL,
-        chromadb=f"{settings.CHROMA_HOST}:{settings.CHROMA_PORT}",
+        status=overall_status,
+        chromadb=health["chromadb"],
+        ollama=health["ollama"],
     )
 
 
@@ -64,6 +87,7 @@ async def upload_document(file: UploadFile = File(...)):
             detail=f"不支持的文件格式。支持格式: {', '.join(DocumentParser.get_supported_formats())}",
         )
 
+    temp_path = None
     try:
         content = await file.read()
 
@@ -71,12 +95,13 @@ async def upload_document(file: UploadFile = File(...)):
             raise HTTPException(status_code=400, detail="文件过大")
 
         temp_path = save_uploaded_file(content, file.filename)
+        logger.info(f"File saved to: {temp_path}")
 
         documents, doc_id, metadata = DocumentParser.parse(temp_path, file.filename)
+        logger.info(f"Document parsed: {doc_id}, {len(documents)} pages/sections")
 
         chunk_count, vector_ids = rag_engine.add_documents(documents, [metadata])
-
-        cleanup_file(temp_path)
+        logger.info(f"Added {chunk_count} chunks to vector store")
 
         return JSONResponse(
             {
@@ -87,8 +112,14 @@ async def upload_document(file: UploadFile = File(...)):
             }
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
+        logger.error(f"Failed to process file {file.filename}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"处理文件失败: {str(e)}")
+    finally:
+        if temp_path:
+            cleanup_file(temp_path)
 
 
 @app.post("/api/query")
@@ -97,6 +128,7 @@ async def query_documents(request: QueryRequest):
         result = rag_engine.query(request.question, request.k)
         return JSONResponse(result)
     except Exception as e:
+        logger.error(f"Query failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"查询失败: {str(e)}")
 
 
@@ -106,6 +138,7 @@ async def summarize_document(doc_id: str):
         summary = rag_engine.summarize(doc_id)
         return JSONResponse({"doc_id": doc_id, "summary": summary})
     except Exception as e:
+        logger.error(f"Summarize failed for {doc_id}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"生成摘要失败: {str(e)}")
 
 
