@@ -2,8 +2,7 @@ import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, FileText, AlertCircle, CheckCircle } from 'lucide-react';
 import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+import { API_ENDPOINTS, REQUEST_TIMEOUT } from '../config/api';
 
 interface FileUploadProps {
   onSuccess: (doc: { doc_id: string; filename: string; chunks: number }) => void;
@@ -28,10 +27,11 @@ export default function FileUpload({ onSuccess }: FileUploadProps) {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await axios.post(`${API_URL}/api/documents/upload`, formData, {
+      const response = await axios.post(API_ENDPOINTS.upload, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+        timeout: REQUEST_TIMEOUT,
       });
 
       setSuccess(true);
@@ -40,7 +40,9 @@ export default function FileUpload({ onSuccess }: FileUploadProps) {
         setSuccess(false);
       }, 1000);
     } catch (err: any) {
-      setError(err.response?.data?.detail || '上传失败，请重试');
+      const errorMessage = err.response?.data?.detail || err.message || '上传失败，请重试';
+      setError(errorMessage);
+      console.error('上传错误:', err);
     } finally {
       setUploading(false);
     }

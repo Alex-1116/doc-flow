@@ -7,9 +7,15 @@ services:
     volumes:
       - ollama-data:/root/.ollama
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 5 bash -c 'cat < /dev/null > /dev/tcp/localhost/11434' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
 
   chromadb:
-    image: chromadb/chroma:0.4.24
+    image: chromadb/chroma:0.5.0
     container_name: docflow-chromadb
     ports:
       - "8000:8000"
@@ -18,7 +24,15 @@ services:
     environment:
       - IS_PERSISTENT=TRUE
       - ANONYMIZED_TELEMETRY=FALSE
+      - CHROMA_SERVER_HOST=0.0.0.0
+      - CHROMA_SERVER_PORT=8000
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
 
   backend:
     build: ./backend
@@ -29,10 +43,22 @@ services:
       - OLLAMA_BASE_URL=http://ollama:11434
       - CHROMA_HOST=chromadb
       - CHROMA_PORT=8000
+      - CHROMA_COLLECTION=docflow_documents
+      - OLLAMA_TIMEOUT=300
+      - REQUEST_TIMEOUT=300
+      - MAX_CONCURRENT_UPLOADS=3
     depends_on:
-      - ollama
-      - chromadb
+      ollama:
+        condition: service_healthy
+      chromadb:
+        condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   frontend:
     build: ./frontend
@@ -42,7 +68,8 @@ services:
     environment:
       - VITE_API_URL=http://localhost:8080
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:

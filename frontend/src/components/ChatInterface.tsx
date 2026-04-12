@@ -2,8 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+import { API_ENDPOINTS, REQUEST_TIMEOUT } from '../config/api';
 
 interface Message {
   id: string;
@@ -50,10 +49,16 @@ export default function ChatInterface({ documents }: ChatInterfaceProps) {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${API_URL}/api/query`, {
-        question: input,
-        k: 4,
-      });
+      const response = await axios.post(
+        API_ENDPOINTS.query,
+        {
+          question: input,
+          k: 4,
+        },
+        {
+          timeout: REQUEST_TIMEOUT,
+        }
+      );
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -63,13 +68,15 @@ export default function ChatInterface({ documents }: ChatInterfaceProps) {
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
-    } catch (err) {
-      const errorMessage: Message = {
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.detail || err.message || '处理您的问题时出现了错误';
+      const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: '抱歉，处理您的问题时出现了错误，请稍后重试。',
+        content: `抱歉，${errorMessage}，请稍后重试。`,
       };
-      setMessages((prev) => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, assistantMessage]);
+      console.error('查询错误:', err);
     } finally {
       setLoading(false);
     }
