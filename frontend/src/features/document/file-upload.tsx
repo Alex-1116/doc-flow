@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, FileText, AlertCircle, CheckCircle } from 'lucide-react';
-import { documentApi } from '../../api/document';
+import { documentApi } from '@/api/document';
 
 interface FileUploadProps {
   onSuccess: (doc: { doc_id: string; filename: string; chunks: number }) => void;
@@ -55,7 +55,7 @@ export default function FileUpload({ onSuccess }: FileUploadProps) {
     <div className="space-y-6">
       <div
         {...getRootProps()}
-        className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all ${
+        className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all group ${
           isDragActive
             ? 'border-purple-500 bg-purple-50'
             : 'border-gray-300 hover:border-purple-400 hover:bg-gray-50'
@@ -63,7 +63,7 @@ export default function FileUpload({ onSuccess }: FileUploadProps) {
       >
         <input {...getInputProps()} />
         <div className="space-y-4">
-          <div className="w-16 h-16 mx-auto bg-purple-100 rounded-full flex items-center justify-center">
+          <div className="w-16 h-16 mx-auto bg-purple-100 rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
             <Upload className="w-8 h-8 text-purple-600" />
           </div>
           <div>

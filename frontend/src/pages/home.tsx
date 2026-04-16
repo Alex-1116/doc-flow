@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { FileText, Upload, MessageSquare } from 'lucide-react';
-import FileUpload from '../features/document/file-upload';
-import ChatInterface from '../features/chat/chat-interface';
-import { useChatStore } from '../store/useChatStore';
-import { documentApi } from '../api/document';
+import FileUpload from '@/features/document/file-upload';
+import ChatInterface from '@/features/chat/chat-interface';
+import { useChatStore } from '@/store/useChatStore';
+import { documentApi } from '@/api/document';
 
 export default function Home() {
   const activeTab = useChatStore((state) => state.activeTab);

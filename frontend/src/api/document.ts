@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { API_ENDPOINTS } from '../config/api';
+import { API_ENDPOINTS } from '@/config/api';
 
 export interface DocumentResponse {
   doc_id: string;

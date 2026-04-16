@@ -1,8 +1,11 @@
 import Home from './pages/home';
+import { TooltipProvider } from './components/ui/tooltip';
 
 function App() {
   return (
-    <Home />
+    <TooltipProvider>
+      <Home />
+    </TooltipProvider>
   );
 }
 
