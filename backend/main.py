@@ -34,7 +34,7 @@ async def lifespan(app: FastAPI):
     # 延迟初始化 RAG 引擎
     rag = get_rag_engine()
     retry_count = 0
-    max_retries = 10
+    max_retries = 2
 
     while retry_count < max_retries:
         if rag.initialize():

@@ -1,34 +1,4 @@
 services:
-  ollama:
-    image: ollama/ollama:latest
-    container_name: docflow-ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama-data:/root/.ollama
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "timeout 5 bash -c 'cat < /dev/null > /dev/tcp/localhost/11434' || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 60s
-
-  ollama-pull:
-    image: ollama/ollama:latest
-    container_name: docflow-ollama-pull
-    environment:
-      - OLLAMA_HOST=http://ollama:11434
-    depends_on:
-      ollama:
-        condition: service_healthy
-    entrypoint: /bin/sh
-    command: >
-      -c "echo 'Pulling models...' && 
-             ollama pull llama3 && 
-             ollama pull bge-m3 && 
-             echo 'Models pulled successfully!'"
-
   chromadb:
     image: chromadb/chroma:0.5.0
     container_name: docflow-chromadb
@@ -55,16 +25,21 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - OLLAMA_BASE_URL=http://ollama:11434
+      - LLM_PROVIDER=${LLM_PROVIDER:-openai_compatible}
+      - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-openai_compatible}
+      - LLM_BASE_URL=${LLM_BASE_URL:-}
+      - LLM_API_KEY=${LLM_API_KEY:-}
+      - LLM_MODEL=${LLM_MODEL:-}
+      - EMBEDDING_BASE_URL=${EMBEDDING_BASE_URL:-}
+      - EMBEDDING_API_KEY=${EMBEDDING_API_KEY:-}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-}
+      - GEMINI_EMBEDDING_PATH=${GEMINI_EMBEDDING_PATH:-}
       - CHROMA_HOST=chromadb
       - CHROMA_PORT=8000
       - CHROMA_COLLECTION=docflow_documents
-      - OLLAMA_TIMEOUT=300
       - REQUEST_TIMEOUT=300
       - MAX_CONCURRENT_UPLOADS=3
     depends_on:
-      ollama:
-        condition: service_healthy
       chromadb:
         condition: service_healthy
     restart: unless-stopped
@@ -86,7 +61,5 @@ services:
       backend:
         condition: service_healthy
     restart: unless-stopped
-
 volumes:
-  ollama-data:
   chroma-data:

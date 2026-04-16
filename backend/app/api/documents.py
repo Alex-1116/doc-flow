@@ -81,11 +81,22 @@ async def delete_document(doc_id: str, rag: RAGEngine = Depends(get_rag)):
 async def list_documents(rag: RAGEngine = Depends(get_rag)):
     """列出所有文档"""
     try:
-        # 获取向量存储并查询所有文档
-        vector_store = rag.get_vector_store()
-        # 这里可以通过元数据查询获取所有文档
-        # 由于 ChromaDB 的限制，我们返回空列表
-        return JSONResponse({"documents": []})
+        coll = rag._get_or_create_collection()
+        results = coll.get(include=["metadatas"])
+        
+        docs_map = {}
+        for meta in results.get("metadatas", []):
+            doc_id = meta.get("doc_id")
+            if doc_id and doc_id not in docs_map:
+                docs_map[doc_id] = {
+                    "id": doc_id,
+                    "name": meta.get("filename", "未知文档"),
+                    "chunks": 0
+                }
+            if doc_id:
+                docs_map[doc_id]["chunks"] += 1
+                
+        return JSONResponse({"documents": list(docs_map.values())})
     except Exception as e:
         logger.error(f"列出文档失败: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"列出文档失败: {str(e)}")

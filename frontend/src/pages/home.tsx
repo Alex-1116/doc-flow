@@ -1,13 +1,28 @@
+import { useEffect } from 'react';
 import { FileText, Upload, MessageSquare } from 'lucide-react';
 import FileUpload from '../features/document/file-upload';
 import ChatInterface from '../features/chat/chat-interface';
 import { useChatStore } from '../store/useChatStore';
+import { documentApi } from '../api/document';
 
 export default function Home() {
   const activeTab = useChatStore((state) => state.activeTab);
   const setActiveTab = useChatStore((state) => state.setActiveTab);
   const documents = useChatStore((state) => state.documents);
   const addDocument = useChatStore((state) => state.addDocument);
+  const setDocuments = useChatStore((state) => state.setDocuments);
+
+  useEffect(() => {
+    // 页面加载时获取已有的文档列表
+    documentApi.list().then((res) => {
+      if (res.documents && res.documents.length > 0) {
+        setDocuments(res.documents);
+        setActiveTab('chat'); // 如果有文档，默认直接进入问答界面
+      }
+    }).catch((err) => {
+      console.error('获取文档列表失败:', err);
+    });
+  }, []);
 
   const handleUploadSuccess = (doc: { doc_id: string; filename: string; chunks: number }) => {
     addDocument({ id: doc.doc_id, name: doc.filename, chunks: doc.chunks });

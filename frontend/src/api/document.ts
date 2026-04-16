@@ -14,6 +14,14 @@ export interface QueryResponse {
 }
 
 export const documentApi = {
+  // 获取文档列表
+  list: async (): Promise<{ documents: Array<{ id: string; name: string; chunks: number }> }> => {
+    const response = await apiClient.get<{ documents: Array<{ id: string; name: string; chunks: number }> }>(
+      API_ENDPOINTS.documents
+    );
+    return response.data;
+  },
+
   // 上传文档
   upload: async (file: File): Promise<DocumentResponse> => {
     const formData = new FormData();

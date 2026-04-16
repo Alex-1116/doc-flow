@@ -16,6 +16,7 @@ export interface Message {
 interface ChatStore {
   // 文档状态
   documents: Document[];
+  setDocuments: (docs: Document[]) => void;
   addDocument: (doc: Document) => void;
   clearDocuments: () => void;
   
@@ -32,6 +33,7 @@ interface ChatStore {
 export const useChatStore = create<ChatStore>((set) => ({
   // 文档状态
   documents: [],
+  setDocuments: (docs: Document[]) => set({ documents: docs }),
   addDocument: (doc: Document) => set((state) => ({ documents: [...state.documents, doc] })),
   clearDocuments: () => set({ documents: [] }),
   

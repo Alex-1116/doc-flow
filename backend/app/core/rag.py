@@ -1,70 +1,24 @@
-import os
-import time
 import logging
-import asyncio
-import httpx
 from typing import Optional, List, Dict, Any
-from functools import wraps
 
 import chromadb
 from chromadb.config import Settings as ChromaSettings
 from langchain_community.vectorstores import Chroma
-from langchain_community.embeddings import OllamaEmbeddings
-from langchain_community.chat_models import ChatOllama
 from langchain.chains.retrieval_qa.base import RetrievalQA
 from langchain.prompts import PromptTemplate
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 
 from app.core.config import settings
+from app.core.providers import (
+    check_embeddings_health,
+    check_llm_health,
+    create_embeddings,
+    create_llm,
+)
+from app.core.providers.common import retry_with_backoff
 
 logger = logging.getLogger(__name__)
-
-
-def retry_with_backoff(max_retries: int = 5, initial_delay: float = 1.0, backoff_factor: float = 2.0):
-    """带指数退避的重试装饰器"""
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            delay = initial_delay
-            last_exception = None
-            for attempt in range(max_retries):
-                try:
-                    return func(*args, **kwargs)
-                except Exception as e:
-                    last_exception = e
-                    if attempt < max_retries - 1:
-                        logger.warning(f"{func.__name__} 第 {attempt + 1} 次尝试失败: {e}, {delay}秒后重试...")
-                        time.sleep(delay)
-                        delay *= backoff_factor
-                    else:
-                        logger.error(f"{func.__name__} 所有重试都失败了: {e}")
-            raise last_exception
-        return wrapper
-    return decorator
-
-
-def async_retry_with_backoff(max_retries: int = 5, initial_delay: float = 1.0, backoff_factor: float = 2.0):
-    """异步版本的带指数退避的重试装饰器"""
-    def decorator(func):
-        @wraps(func)
-        async def wrapper(*args, **kwargs):
-            delay = initial_delay
-            last_exception = None
-            for attempt in range(max_retries):
-                try:
-                    return await func(*args, **kwargs)
-                except Exception as e:
-                    last_exception = e
-                    if attempt < max_retries - 1:
-                        logger.warning(f"{func.__name__} 第 {attempt + 1} 次尝试失败: {e}, {delay}秒后重试...")
-                        await asyncio.sleep(delay)
-                        delay *= backoff_factor
-                    else:
-                        logger.error(f"{func.__name__} 所有重试都失败了: {e}")
-            raise last_exception
-        return wrapper
-    return decorator
 
 
 class RAGEngine:
@@ -84,8 +38,8 @@ class RAGEngine:
             return
 
         self._client: Optional[chromadb.HttpClient] = None
-        self._embeddings: Optional[OllamaEmbeddings] = None
-        self._llm: Optional[ChatOllama] = None
+        self._embeddings: Optional[Any] = None
+        self._llm: Optional[Any] = None
         self._text_splitter: Optional[RecursiveCharacterTextSplitter] = None
         self._init_error: Optional[str] = None
 
@@ -109,51 +63,9 @@ class RAGEngine:
         logger.info("ChromaDB 连接成功")
         return client
 
-    @retry_with_backoff(max_retries=10, initial_delay=5.0)
-    def _init_ollama(self) -> tuple:
-        """初始化 Ollama 连接，带重试机制"""
-        logger.info(f"正在连接 Ollama: {settings.OLLAMA_BASE_URL}")
-
-        # 检查所需模型是否已经拉取
-        required_models = [settings.MODEL_NAME, settings.EMBEDDING_MODEL]
-        try:
-            with httpx.Client(timeout=10.0) as client:
-                response = client.get(f"{settings.OLLAMA_BASE_URL}/api/tags")
-                response.raise_for_status()
-                available_models = [m["name"] for m in response.json().get("models", [])]
-                
-                for req_model in required_models:
-                    if not any(req_model == am or am.startswith(f"{req_model}:") for am in available_models):
-                        error_msg = f"Ollama 模型未找到: {req_model}。请确认已运行 'ollama pull {req_model}' 或等待自动拉取完成。"
-                        logger.warning(error_msg)
-                        raise ValueError(error_msg)
-        except Exception as e:
-            logger.error(f"检查 Ollama 模型状态失败: {e}")
-            raise
-
-        embeddings = OllamaEmbeddings(
-            base_url=settings.OLLAMA_BASE_URL,
-            model=settings.EMBEDDING_MODEL,
-        )
-
-        llm = ChatOllama(
-            base_url=settings.OLLAMA_BASE_URL,
-            model=settings.MODEL_NAME,
-            temperature=0,
-            # Langchain 中的 ChatOllama 没有 timeout 参数，只有 request_timeout 参数或者不传
-            # 我们直接去掉 timeout 参数以避免与某些库版本不兼容，使用外部超时控制即可
-        )
-
-        # 测试嵌入模型可用性
-        embeddings.embed_query("test")
-        logger.info(f"Ollama 嵌入模型 {settings.EMBEDDING_MODEL} 可用")
-
-        # 测试对话模型可用性
-        llm.invoke("test")
-        logger.info(f"Ollama 对话模型 {settings.MODEL_NAME} 可用")
-
-        logger.info("Ollama 连接并验证成功")
-        return embeddings, llm
+    def _init_ai_clients(self) -> tuple:
+        """按 provider 初始化 Embedding 和 LLM。"""
+        return create_embeddings(), create_llm()
 
     def initialize(self) -> bool:
         """执行实际初始化，返回是否成功"""
@@ -165,9 +77,9 @@ class RAGEngine:
             if self._client is None:
                 self._client = self._init_chroma_client()
 
-            # 初始化 Ollama
+            # 初始化模型客户端
             if self._embeddings is None or self._llm is None:
-                self._embeddings, self._llm = self._init_ollama()
+                self._embeddings, self._llm = self._init_ai_clients()
 
             # 初始化文本分割器
             if self._text_splitter is None:
@@ -326,7 +238,8 @@ class RAGEngine:
         status = {
             "status": "ok",
             "chromadb": {"connected": False, "error": None},
-            "ollama": {"connected": False, "error": None, "models": []},
+            "llm": await check_llm_health(),
+            "embeddings": await check_embeddings_health(),
         }
 
         # 检查 ChromaDB
@@ -341,27 +254,7 @@ class RAGEngine:
             status["chromadb"]["error"] = "未初始化"
             status["status"] = "degraded"
 
-        # 检查 Ollama
-        try:
-            async with httpx.AsyncClient(timeout=5.0) as client:
-                response = await client.get(f"{settings.OLLAMA_BASE_URL}/api/tags")
-                response.raise_for_status()
-                available_models = [m["name"] for m in response.json().get("models", [])]
-                status["ollama"]["models"] = available_models
-                
-                required_models = [settings.MODEL_NAME, settings.EMBEDDING_MODEL]
-                missing_models = [
-                    rm for rm in required_models
-                    if not any(rm == am or am.startswith(f"{rm}:") for am in available_models)
-                ]
-                
-                if missing_models:
-                    status["ollama"]["error"] = f"缺失必要模型: {', '.join(missing_models)}"
-                    status["status"] = "degraded"
-                else:
-                    status["ollama"]["connected"] = True
-        except Exception as e:
-            status["ollama"]["error"] = str(e)
+        if not status["embeddings"]["connected"] or not status["llm"]["connected"]:
             status["status"] = "degraded"
 
         return status

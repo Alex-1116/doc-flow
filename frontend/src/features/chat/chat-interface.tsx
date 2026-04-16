@@ -131,9 +131,11 @@ export default function ChatInterface({ documents }: ChatInterfaceProps) {
                   <div className="mt-4 pt-4 border-t border-gray-200">
                     <p className="text-xs font-medium text-gray-500 mb-2">来源:</p>
                     <div className="space-y-1">
-                      {message.sources.slice(0, 2).map((source, i) => (
+                      {Array.from(new Set(message.sources.map((s) => s.metadata.filename || '未知文档')))
+                        .slice(0, 2)
+                        .map((filename, i) => (
                         <p key={i} className="text-xs text-gray-500">
-                          {source.metadata.filename || '未知文档'}
+                          {filename}
                         </p>
                       ))}
                     </div>

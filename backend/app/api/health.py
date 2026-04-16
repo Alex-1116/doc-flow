@@ -15,6 +15,7 @@ async def health_check(rag: RAGEngine = Depends(get_rag)):
     health = await rag.health_check()
     return HealthResponse(
         status=health["status"],
-        ollama=health["ollama"],
+        llm=health["llm"],
+        embeddings=health["embeddings"],
         chromadb=health["chromadb"],
     )

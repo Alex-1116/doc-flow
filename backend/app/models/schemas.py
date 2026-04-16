@@ -6,5 +6,6 @@ class QueryRequest(BaseModel):
 
 class HealthResponse(BaseModel):
     status: str
-    ollama: dict
+    llm: dict
+    embeddings: dict
     chromadb: dict
