@@ -1,7 +1,10 @@
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, FileText, AlertCircle, CheckCircle } from 'lucide-react';
+import { Upload, FileText, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { documentApi } from '@/api/document';
+import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 
 interface FileUploadProps {
   onSuccess: (doc: { doc_id: string; filename: string; chunks: number }) => void;
@@ -53,38 +56,23 @@ export default function FileUpload({ onSuccess }: FileUploadProps) {
 
   return (
     <div className="space-y-6">
-      <div
+      <Card
         {...getRootProps()}
-        className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all group ${
+        className={`border-2 border-dashed cursor-pointer transition-all group overflow-hidden ${
           isDragActive
             ? 'border-purple-500 bg-purple-50'
             : 'border-gray-300 hover:border-purple-400 hover:bg-gray-50'
         }`}
       >
-        <input {...getInputProps()} />
-        <div className="space-y-4">
-          <div className="w-16 h-16 mx-auto bg-purple-100 rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
+        <CardContent className="p-12 text-center flex flex-col items-center justify-center space-y-4">
+          <input {...getInputProps()} />
+          <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
             <Upload className="w-8 h-8 text-purple-600" />
           </div>
           <div>
             {uploading ? (
               <div className="flex items-center justify-center gap-2 text-purple-600">
-                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    fill="none"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                  />
-                </svg>
+                <Loader2 className="w-5 h-5 animate-spin" />
                 <span>正在处理文档...</span>
               </div>
             ) : success ? (
@@ -105,22 +93,27 @@ export default function FileUpload({ onSuccess }: FileUploadProps) {
               </>
             )}
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {error && (
-        <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 rounded-lg">
-          <AlertCircle className="w-5 h-5" />
-          <span>{error}</span>
-        </div>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>上传失败</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       <div className="grid grid-cols-2 gap-4">
         {SUPPORTED_FORMATS.map((format) => (
-          <div key={format} className="flex items-center gap-3 p-4 bg-white rounded-lg border">
-            <FileText className="w-5 h-5 text-purple-600" />
-            <span className="font-mono text-sm text-gray-600">{format}</span>
-          </div>
+          <Card key={format}>
+            <CardContent className="p-4 flex items-center gap-3">
+              <FileText className="w-5 h-5 text-purple-600" />
+              <Badge variant="secondary" className="font-mono">
+                {format}
+              </Badge>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </div>
