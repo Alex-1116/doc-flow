@@ -18,6 +18,7 @@ interface ChatStore {
   documents: Document[];
   setDocuments: (docs: Document[]) => void;
   addDocument: (doc: Document) => void;
+  removeDocument: (id: string) => void;
   clearDocuments: () => void;
   
   // 聊天状态
@@ -35,6 +36,7 @@ export const useChatStore = create<ChatStore>((set) => ({
   documents: [],
   setDocuments: (docs: Document[]) => set({ documents: docs }),
   addDocument: (doc: Document) => set((state) => ({ documents: [...state.documents, doc] })),
+  removeDocument: (id: string) => set((state) => ({ documents: state.documents.filter(d => d.id !== id) })),
   clearDocuments: () => set({ documents: [] }),
   
   // 聊天状态

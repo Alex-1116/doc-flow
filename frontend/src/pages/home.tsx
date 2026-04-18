@@ -1,10 +1,13 @@
 import { useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { FileText, Upload, MessageSquare } from 'lucide-react';
 import FileUpload from '@/features/document/file-upload';
 import ChatInterface from '@/features/chat/chat-interface';
 import { useChatStore } from '@/store/useChatStore';
 import { documentApi } from '@/api/document';
+import { buttonVariants } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/libs/utils';
 
 export default function Home() {
   const activeTab = useChatStore((state) => state.activeTab);
@@ -50,6 +53,12 @@ export default function Home() {
                   已上传 {documents.length} 个文档
                 </span>
               )}
+              <Link
+                to="/documents"
+                className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'gap-2')}
+              >
+                管理文档
+              </Link>
             </div>
           </div>
         </div>

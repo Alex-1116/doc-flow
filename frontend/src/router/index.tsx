@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom';
 import MainLayout from '@/layouts/main-layout';
 import Home from '@/pages/home';
+import DocumentsPage from '@/pages/documents';
 import Landing from '@/pages/landing';
 import NotFound from '@/pages/not-found';
 
@@ -15,6 +16,10 @@ export const router = createBrowserRouter([
       {
         path: '/home',
         element: <Home />,
+      },
+      {
+        path: '/documents',
+        element: <DocumentsPage />,
       },
       // 可以在这里继续添加其他内部页面，如 /settings, /profile 等
     ]

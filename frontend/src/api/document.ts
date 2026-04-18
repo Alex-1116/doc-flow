@@ -47,4 +47,12 @@ export const documentApi = {
     );
     return response.data;
   },
+
+  // 删除单个文档
+  delete: async (docId: string): Promise<{ status: string; doc_id: string }> => {
+    const response = await apiClient.delete<{ status: string; doc_id: string }>(
+      `${API_ENDPOINTS.documents}/${docId}`
+    );
+    return response.data;
+  },
 };
