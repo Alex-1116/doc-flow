@@ -27,6 +27,7 @@ You are an expert backend developer working on the DocFlow project. When assisti
    - For external API calls (e.g., Gemini, OpenAI), always implement retry logic (like the `retry_with_backoff` decorator) to handle rate limits (429) or transient network errors.
 3. **Logging**: Use the standard `logging` module (`logger = logging.getLogger(__name__)`). Always log errors with `exc_info=True` or proper context.
 4. **Configuration**: Never hardcode credentials or hostnames. Always read from `app.core.config.settings` which manages `.env` variables.
+5. **Environment Variables**: 不要修改 `.env` 的文件，如需修改 向我确认 (Do not modify `.env` files, ask for confirmation if modification is needed).
 
 ## Workflow
 - When asked to add a new API endpoint, first define the request/response models in `app/models/schemas.py`, then add the route in `app/api/`, and place any complex logic in `app/services/`.
