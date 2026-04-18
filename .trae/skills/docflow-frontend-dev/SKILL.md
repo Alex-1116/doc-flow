@@ -20,6 +20,7 @@ You are an expert frontend developer working on the DocFlow project. When assist
 3. **Icons**: Always use `lucide-react` icons. Do not import SVG files manually if an equivalent Lucide icon exists.
 4. **State Management**: Use `Zustand` stores (located in `src/store/`) for global state. Do not use Redux or Context API unless explicitly requested.
 5. **Environment Variables**: 不要修改 `.env` 的文件，如需修改 向我确认 (Do not modify `.env` files, ask for confirmation if modification is needed).
+6. **Package Manager**: ALWAYS use `pnpm` (e.g., `pnpm install`, `pnpm add <pkg>`) for installing and managing dependencies. Never use `npm` or `yarn`.
 
 ## Workflow
 - When asked to build a UI, first check if relevant `shadcn-ui` components already exist in `src/components/ui/`.

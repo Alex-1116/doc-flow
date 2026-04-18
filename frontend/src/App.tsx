@@ -1,10 +1,11 @@
-import Home from './pages/home';
+import { RouterProvider } from 'react-router-dom';
+import { router } from './router';
 import { TooltipProvider } from './components/ui/tooltip';
 
 function App() {
   return (
     <TooltipProvider>
-      <Home />
+      <RouterProvider router={router} />
     </TooltipProvider>
   );
 }

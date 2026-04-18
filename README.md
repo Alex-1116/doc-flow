@@ -148,8 +148,19 @@ cp .env.example .env
 
 # 编辑 .env，填入 LLM / Embedding 配置
 
+# 构建服务镜像
+docker compose build
 # 启动默认服务（frontend + backend + chromadb）
 docker compose up -d
+# 停止服务
+docker compose down
+# 查看服务状态
+docker compose ps
+# 重启服务
+docker compose restart
+# 热更
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+
 
 # 打开浏览器
 open http://localhost:3000
