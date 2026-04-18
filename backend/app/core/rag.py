@@ -175,12 +175,17 @@ class RAGEngine:
 
     def delete_document(self, doc_id: str) -> bool:
         """删除文档及其所有向量块"""
-        self.ensure_initialized()
+        # 尝试只初始化 ChromaDB 客户端，不强制要求所有 AI 客户端都成功
+        if self._client is None:
+            try:
+                self._client = self._init_chroma_client()
+            except Exception as e:
+                logger.error(f"无法连接 ChromaDB: {e}")
+                return False
 
         try:
-            vector_store = self.get_vector_store()
-            # 使用 where 条件删除
-            vector_store.delete(where={"doc_id": doc_id})
+            collection = self._client.get_collection(settings.CHROMA_COLLECTION)
+            collection.delete(where={"doc_id": doc_id})
             logger.info(f"已删除文档 {doc_id} 的所有向量")
             return True
         except Exception as e:

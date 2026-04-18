@@ -81,11 +81,25 @@ async def delete_document(doc_id: str, rag: RAGEngine = Depends(get_rag)):
 async def list_documents(rag: RAGEngine = Depends(get_rag)):
     """列出所有文档"""
     try:
-        coll = rag._get_or_create_collection()
-        results = coll.get(include=["metadatas"])
+        # 即使 RAG 引擎（如 LLM/Embedding）初始化失败，也尝试直接读取 ChromaDB 以返回文档列表
+        if rag._client is None:
+            try:
+                rag._client = rag._init_chroma_client()
+            except Exception as e:
+                logger.warning(f"无法连接 ChromaDB: {e}")
+                return JSONResponse({"documents": []})
+
+        try:
+            coll = rag._client.get_collection(settings.CHROMA_COLLECTION)
+            results = coll.get(include=["metadatas"])
+        except Exception:
+            # 集合不存在或其他 ChromaDB 错误时，返回空列表
+            return JSONResponse({"documents": []})
         
         docs_map = {}
-        for meta in results.get("metadatas", []):
+        for meta in (results.get("metadatas") or []):
+            if not meta:
+                continue
             doc_id = meta.get("doc_id")
             if doc_id and doc_id not in docs_map:
                 docs_map[doc_id] = {
