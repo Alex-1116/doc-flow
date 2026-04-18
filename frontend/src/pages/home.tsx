@@ -63,11 +63,11 @@ export default function Home() {
         >
           <TabsList className="flex-shrink-0 self-start group-data-horizontal/tabs:h-auto p-1">
             <TabsTrigger value="upload" className="flex items-center gap-2 py-2 px-6 data-[state=active]:bg-purple-600 data-[state=active]:text-white transition-colors text-base">
-              <Upload className="w-4 h-4" />
+              <Upload className="w-4 h-4 text-blue-500 " />
               上传文档
             </TabsTrigger>
             <TabsTrigger value="chat" className="flex items-center gap-2 py-2 px-6 data-[state=active]:bg-purple-600 data-[state=active]:text-white transition-colors text-base">
-              <MessageSquare className="w-4 h-4" />
+              <MessageSquare className="w-4 h-4 text-purple-500 " />
               开始问答
             </TabsTrigger>
           </TabsList>
@@ -78,7 +78,7 @@ export default function Home() {
             </div>
           </TabsContent>
           
-          <TabsContent value="chat" className="h-full mt-0 data-[state=active]:flex data-[state=active]:flex-col">
+          <TabsContent value="chat" className="mt-0 h-full min-h-0 data-[state=active]:flex data-[state=active]:flex-col">
             <ChatInterface documents={documents} />
           </TabsContent>
         </Tabs>

@@ -26,29 +26,29 @@ export function ChatMessageList({ messages, loading, messagesEndRef }: ChatMessa
   }
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col">
-      <ScrollArea className="flex-1 px-6">
-        <div className="space-y-6 flex flex-col py-6">
-        {messages.map((message) => (
-          <ChatMessageItem key={message.id} message={message} />
-        ))}
-        
-        {loading && (
-          <div className="flex gap-3">
-            <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
-              <Loader2 className="w-4 h-4 text-white animate-spin" />
-            </div>
-            <div className="bg-gray-100 rounded-2xl px-5 py-4">
-              <div className="flex gap-1">
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-75" />
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-150" />
+    <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
+      <ScrollArea className="min-h-0 flex-1 px-6">
+        <div className="flex flex-col space-y-6 py-6">
+          {messages.map((message) => (
+            <ChatMessageItem key={message.id} message={message} />
+          ))}
+
+          {loading && (
+            <div className="flex gap-3">
+              <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                <Loader2 className="w-4 h-4 text-white animate-spin" />
+              </div>
+              <div className="bg-gray-100 rounded-2xl px-5 py-4">
+                <div className="flex gap-1">
+                  <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
+                  <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-75" />
+                  <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-150" />
+                </div>
               </div>
             </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
       </ScrollArea>
     </div>
   );

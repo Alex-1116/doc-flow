@@ -56,45 +56,45 @@ export default function FileUpload({ onSuccess }: FileUploadProps) {
 
   return (
     <div className="space-y-6">
-      <Card
-        {...getRootProps()}
-        className={`border-2 border-dashed cursor-pointer transition-all group overflow-hidden ${
-          isDragActive
-            ? 'border-purple-500 bg-purple-50'
-            : 'border-gray-300 hover:border-purple-400 hover:bg-gray-50'
-        }`}
-      >
-        <CardContent className="p-12 text-center flex flex-col items-center justify-center space-y-4">
-          <input {...getInputProps()} />
-          <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
-            <Upload className="w-8 h-8 text-purple-600" />
-          </div>
-          <div>
-            {uploading ? (
-              <div className="flex items-center justify-center gap-2 text-purple-600">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span>正在处理文档...</span>
-              </div>
-            ) : success ? (
-              <div className="flex items-center justify-center gap-2 text-green-600">
-                <CheckCircle className="w-5 h-5" />
-                <span>上传成功！</span>
-              </div>
-            ) : isDragActive ? (
-              <p className="text-purple-600 font-medium">松开以上传文件</p>
-            ) : (
-              <>
-                <p className="text-lg font-medium text-gray-700">
-                  拖拽文件到此处，或点击上传
-                </p>
-                <p className="text-sm text-gray-500 mt-2">
-                  支持 {SUPPORTED_FORMATS.join(', ')} 格式
-                </p>
-              </>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      <div {...getRootProps()}>
+        <Card
+          className={`ring-0 border-2 border-dashed cursor-pointer transition-all group overflow-hidden ${isDragActive
+              ? 'border-purple-500 bg-purple-50'
+              : 'border-gray-300 hover:border-purple-400 hover:bg-gray-50'
+            }`}
+        >
+          <CardContent className="p-12 text-center flex flex-col items-center justify-center space-y-4">
+            <input {...getInputProps()} />
+            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
+              <Upload className="w-8 h-8 text-purple-600" />
+            </div>
+            <div>
+              {uploading ? (
+                <div className="flex items-center justify-center gap-2 text-purple-600">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>正在处理文档...</span>
+                </div>
+              ) : success ? (
+                <div className="flex items-center justify-center gap-2 text-green-600">
+                  <CheckCircle className="w-5 h-5" />
+                  <span>上传成功！</span>
+                </div>
+              ) : isDragActive ? (
+                <p className="text-purple-600 font-medium">松开以上传文件</p>
+              ) : (
+                <>
+                  <p className="text-lg font-medium text-gray-700">
+                    拖拽文件到此处，或点击上传
+                  </p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    支持 {SUPPORTED_FORMATS.join(', ')} 格式
+                  </p>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {error && (
         <Alert variant="destructive">
