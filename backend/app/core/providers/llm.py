@@ -13,7 +13,10 @@ logger = logging.getLogger(__name__)
 
 @retry_with_backoff(max_retries=5, initial_delay=2.0)
 def init_openai_compatible_llm():
-    """初始化 OpenAI 兼容 LLM 客户端。"""
+    """初始化 OpenAI 兼容 LLM 客户端。
+
+    这里只构造客户端，不在启动或热重载阶段发起真实模型调用。
+    """
     if not settings.LLM_API_KEY:
         raise ValueError("缺少 LLM_API_KEY，请在环境变量中配置")
     if not settings.LLM_MODEL:
@@ -30,8 +33,7 @@ def init_openai_compatible_llm():
         default_headers={"Connection": "close"},  # 关闭连接，避免连接池问题
         streaming=True,  # 必须开启流式，否则当前模型在长上下文时会返回空字符串
     )
-    llm.invoke("test")
-    logger.info(f"LLM 模型 {settings.LLM_MODEL} 可用")
+    logger.info(f"LLM 客户端 {settings.LLM_MODEL} 初始化完成")
     return llm
 
 

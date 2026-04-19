@@ -109,7 +109,10 @@ class GeminiEmbeddings:
 
 @retry_with_backoff(max_retries=5, initial_delay=2.0)
 def init_openai_compatible_embeddings():
-    """初始化 OpenAI 兼容 Embedding 客户端。"""
+    """初始化 OpenAI 兼容 Embedding 客户端。
+
+    这里只构造客户端，不在启动或热重载阶段发起真实 embedding 调用。
+    """
     if not settings.EMBEDDING_API_KEY:
         raise ValueError("缺少 EMBEDDING_API_KEY，请在环境变量中配置")
     if not settings.EMBEDDING_MODEL:
@@ -121,14 +124,16 @@ def init_openai_compatible_embeddings():
         base_url=settings.EMBEDDING_BASE_URL,
         api_key=settings.EMBEDDING_API_KEY,
     )
-    embeddings.embed_query("test")
-    logger.info(f"Embedding 模型 {settings.EMBEDDING_MODEL} 可用")
+    logger.info(f"Embedding 客户端 {settings.EMBEDDING_MODEL} 初始化完成")
     return embeddings
 
 
 @retry_with_backoff(max_retries=5, initial_delay=2.0)
 def init_gemini_embeddings():
-    """初始化 Gemini 风格 Embedding 客户端。"""
+    """初始化 Gemini 风格 Embedding 客户端。
+
+    这里只构造客户端，不在启动或热重载阶段发起真实 embedding 调用。
+    """
     if not settings.EMBEDDING_API_KEY:
         raise ValueError("缺少 EMBEDDING_API_KEY，请在环境变量中配置")
     if not settings.EMBEDDING_MODEL:
@@ -142,8 +147,7 @@ def init_gemini_embeddings():
         timeout=settings.REQUEST_TIMEOUT,
         endpoint_path=settings.GEMINI_EMBEDDING_PATH,
     )
-    embeddings.embed_query("test")
-    logger.info(f"Gemini Embedding 模型 {settings.EMBEDDING_MODEL} 可用")
+    logger.info(f"Gemini Embedding 客户端 {settings.EMBEDDING_MODEL} 初始化完成")
     return embeddings
 
 

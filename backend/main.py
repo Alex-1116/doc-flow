@@ -8,7 +8,6 @@ from fastapi.middleware.cors import CORSMiddleware
 import httpx
 
 from app.core.config import settings
-from app.core.rag import get_rag_engine
 from app.api import api_router
 
 # 配置日志
@@ -31,21 +30,8 @@ async def lifespan(app: FastAPI):
     app.state.upload_semaphore = asyncio.Semaphore(settings.MAX_CONCURRENT_UPLOADS)
     logger.info(f"并发控制: 最大同时上传数 = {settings.MAX_CONCURRENT_UPLOADS}")
 
-    # 延迟初始化 RAG 引擎
-    rag = get_rag_engine()
-    retry_count = 0
-    max_retries = 2
-
-    while retry_count < max_retries:
-        if rag.initialize():
-            logger.info("RAG 引擎初始化成功")
-            break
-        else:
-            retry_count += 1
-            logger.warning(f"RAG 引擎初始化失败，第 {retry_count} 次重试...")
-            await asyncio.sleep(2)
-    else:
-        logger.error("RAG 引擎初始化失败，服务将以降级模式运行")
+    # 启动阶段不初始化 AI 客户端，避免热重载和非业务动作消耗模型额度。
+    logger.info("服务以懒加载模式启动，模型将在实际业务请求时初始化")
 
     yield
 

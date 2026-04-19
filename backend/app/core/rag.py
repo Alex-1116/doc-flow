@@ -67,26 +67,44 @@ class RAGEngine:
         """按 provider 初始化 Embedding 和 LLM。"""
         return create_embeddings(), create_llm()
 
-    def initialize(self) -> bool:
-        """执行实际初始化，返回是否成功"""
+    def _ensure_chroma_client(self) -> None:
+        """确保 ChromaDB 已连接。"""
+        if self._client is None:
+            self._client = self._init_chroma_client()
+
+    def _ensure_text_splitter(self) -> None:
+        """确保文本切分器可用。"""
+        if self._text_splitter is None:
+            self._text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=settings.CHUNK_SIZE,
+                chunk_overlap=settings.CHUNK_OVERLAP,
+            )
+
+    def _ensure_embeddings(self) -> None:
+        """按需初始化 Embedding 客户端。"""
+        if self._embeddings is None:
+            self._embeddings = create_embeddings()
+
+    def _ensure_llm(self) -> None:
+        """按需初始化 LLM 客户端。"""
+        if self._llm is None:
+            self._llm = create_llm()
+
+    def initialize(self, include_ai: bool = False) -> bool:
+        """执行初始化。
+
+        默认只初始化本地依赖，避免在启动/热重载阶段调用外部模型。
+        include_ai=True 时才初始化 Embedding 和 LLM。
+        """
         if self.is_initialized:
             return True
 
         try:
-            # 初始化 ChromaDB
-            if self._client is None:
-                self._client = self._init_chroma_client()
-
-            # 初始化模型客户端
-            if self._embeddings is None or self._llm is None:
-                self._embeddings, self._llm = self._init_ai_clients()
-
-            # 初始化文本分割器
-            if self._text_splitter is None:
-                self._text_splitter = RecursiveCharacterTextSplitter(
-                    chunk_size=settings.CHUNK_SIZE,
-                    chunk_overlap=settings.CHUNK_OVERLAP,
-                )
+            self._ensure_chroma_client()
+            self._ensure_text_splitter()
+            if include_ai:
+                self._ensure_embeddings()
+                self._ensure_llm()
 
             self._init_error = None
             logger.info("RAG 引擎初始化成功")
@@ -99,13 +117,13 @@ class RAGEngine:
 
     def ensure_initialized(self) -> None:
         """确保引擎已初始化，否则抛出异常"""
-        if not self.initialize():
+        if not self.initialize(include_ai=False):
             raise RuntimeError(f"RAG 引擎未初始化: {self._init_error}")
 
     @property
     def is_initialized(self) -> bool:
         """检查引擎是否已初始化"""
-        return self._client is not None and self._init_error is None
+        return self._client is not None and self._text_splitter is not None and self._init_error is None
 
     @property
     def initialization_error(self) -> Optional[str]:
@@ -114,7 +132,7 @@ class RAGEngine:
 
     def _get_or_create_collection(self):
         """获取或创建集合，避免集合不存在异常"""
-        self.ensure_initialized()
+        self._ensure_chroma_client()
         try:
             return self._client.get_collection(settings.CHROMA_COLLECTION)
         except Exception:
@@ -126,7 +144,8 @@ class RAGEngine:
 
     def get_vector_store(self):
         """获取向量存储"""
-        self.ensure_initialized()
+        self._ensure_chroma_client()
+        self._ensure_embeddings()
         # 确保集合存在
         self._get_or_create_collection()
 
@@ -138,7 +157,9 @@ class RAGEngine:
 
     def add_documents(self, documents: List[Document], metadatas: Optional[List[Dict]] = None) -> tuple:
         """添加文档，支持事务回滚"""
-        self.ensure_initialized()
+        self._ensure_chroma_client()
+        self._ensure_text_splitter()
+        self._ensure_embeddings()
 
         if not documents:
             return 0, []
@@ -240,7 +261,10 @@ class RAGEngine:
 
     def query(self, question: str, k: int = 4) -> Dict[str, Any]:
         """查询文档"""
-        self.ensure_initialized()
+        self._ensure_chroma_client()
+        self._ensure_text_splitter()
+        self._ensure_embeddings()
+        self._ensure_llm()
 
         vector_store = self.get_vector_store()
 
@@ -284,16 +308,33 @@ class RAGEngine:
         """文档摘要功能"""
         return "文档摘要功能开发中..."
 
-    async def health_check(self) -> Dict[str, Any]:
-        """健康检查 - 实际测试连接"""
+    async def health_check(self, deep: bool = False) -> Dict[str, Any]:
+        """健康检查。
+
+        deep=False: 仅检查服务和 ChromaDB，不调用外部模型。
+        deep=True: 额外检查 LLM / Embedding 连通性。
+        """
         status = {
             "status": "ok",
             "chromadb": {"connected": False, "error": None},
-            "llm": await check_llm_health(),
-            "embeddings": await check_embeddings_health(),
+            "llm": {"checked": deep, "connected": None, "error": None},
+            "embeddings": {"checked": deep, "connected": None, "error": None},
         }
 
+        if deep:
+            status["llm"] = await check_llm_health()
+            status["llm"]["checked"] = True
+            status["embeddings"] = await check_embeddings_health()
+            status["embeddings"]["checked"] = True
+
         # 检查 ChromaDB
+        try:
+            self._ensure_chroma_client()
+        except Exception as e:
+            status["chromadb"]["error"] = str(e)
+            status["status"] = "degraded"
+            return status
+
         if self._client:
             try:
                 self._client.heartbeat()
@@ -305,7 +346,9 @@ class RAGEngine:
             status["chromadb"]["error"] = "未初始化"
             status["status"] = "degraded"
 
-        if not status["embeddings"]["connected"] or not status["llm"]["connected"]:
+        if deep and (
+            not status["embeddings"]["connected"] or not status["llm"]["connected"]
+        ):
             status["status"] = "degraded"
 
         return status
