@@ -1,7 +1,7 @@
-import { Bot, User } from 'lucide-react';
+import { Bot, FileText, User } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
+import { cn } from '@/libs/utils';
 import { Message } from '../types';
 
 interface ChatMessageItemProps {
@@ -12,53 +12,73 @@ export function ChatMessageItem({ message }: ChatMessageItemProps) {
   const isUser = message.role === 'user';
 
   return (
-    <div className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
-      {!isUser && (
-        <Avatar className="w-8 h-8 flex-shrink-0 border bg-purple-600">
-          <AvatarFallback className="bg-purple-600 text-white">
-            <Bot className="w-4 h-4" />
-          </AvatarFallback>
+    <div className={cn('flex w-full gap-4', isUser ? 'flex-row-reverse' : 'flex-row')}>
+      <div className="flex shrink-0 items-start">
+        <Avatar className="h-10 w-10 border border-border shadow-sm">
+          {isUser ? (
+            <AvatarFallback className="bg-primary/10 text-primary">
+              <User className="h-5 w-5" />
+            </AvatarFallback>
+          ) : (
+            <AvatarFallback className="bg-primary text-primary-foreground">
+              <Bot className="h-6 w-6" />
+            </AvatarFallback>
+          )}
         </Avatar>
-      )}
-      
+      </div>
+
       <div
-        className={`max-w-2xl rounded-2xl px-5 py-4 ${
-          isUser
-            ? 'bg-purple-600 text-white'
-            : 'bg-gray-100 text-gray-800'
-        }`}
-      >
-        {!isUser ? (
-          <ReactMarkdown className="prose prose-sm max-w-none">
-            {message.content}
-          </ReactMarkdown>
-        ) : (
-          message.content
+        className={cn(
+          'flex max-w-[80%] flex-col gap-2',
+          isUser ? 'items-end' : 'items-start'
         )}
-        
-        {message.sources && message.sources.length > 0 && (
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <p className="text-xs font-medium text-gray-500 mb-2">来源:</p>
-            <div className="flex flex-wrap gap-2">
-              {Array.from(new Set(message.sources.map((s) => s.metadata.filename || '未知文档')))
-                .slice(0, 2)
-                .map((filename, i) => (
-                <Badge key={i} variant="outline" className="text-xs font-normal border-gray-300">
-                  {filename}
-                </Badge>
+      >
+        <div
+          className={cn(
+            'relative rounded-2xl px-5 py-3.5 text-[15px] leading-relaxed shadow-sm',
+            isUser
+              ? 'bg-primary text-primary-foreground rounded-tr-sm'
+              : 'bg-card text-foreground border border-border rounded-tl-sm'
+          )}
+        >
+          {isUser ? (
+            <div className="whitespace-pre-wrap break-words">{message.content}</div>
+          ) : (
+            <div className="prose prose-slate max-w-none dark:prose-invert prose-p:leading-relaxed prose-pre:bg-muted prose-pre:text-muted-foreground break-words">
+              <ReactMarkdown>{message.content}</ReactMarkdown>
+            </div>
+          )}
+        </div>
+
+        {!isUser && message.sources && message.sources.length > 0 && (
+          <div className="mt-1 w-full max-w-2xl space-y-2 rounded-xl border border-border bg-muted/30 p-4">
+            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+              <FileText className="h-3.5 w-3.5" />
+              参考资料 ({message.sources.length})
+            </div>
+            <div className="grid gap-2">
+              {message.sources.map((source, index) => (
+                <div
+                  key={index}
+                  className="rounded-lg border border-border bg-card p-3 shadow-sm transition-colors hover:bg-muted/50"
+                >
+                  <div className="mb-1.5 flex items-center gap-2">
+                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+                      {index + 1}
+                    </span>
+                    <span className="truncate text-xs font-medium text-foreground">
+                      {source.metadata.source || '未知文档'}
+                    </span>
+                  </div>
+                  <p className="line-clamp-2 text-xs leading-5 text-muted-foreground">
+                    {source.content}
+                  </p>
+                </div>
               ))}
             </div>
           </div>
         )}
       </div>
-
-      {isUser && (
-        <Avatar className="w-8 h-8 flex-shrink-0 border bg-gray-600">
-          <AvatarFallback className="bg-gray-600 text-white">
-            <User className="w-4 h-4" />
-          </AvatarFallback>
-        </Avatar>
-      )}
     </div>
   );
 }

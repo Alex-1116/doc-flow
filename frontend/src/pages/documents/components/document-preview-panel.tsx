@@ -34,29 +34,29 @@ export default function DocumentPreviewPanel({
     >
       <Card
         className={cn(
-          'h-full w-[500px] gap-0 overflow-hidden border-slate-200 p-0',
+          'h-full w-[500px] gap-0 overflow-hidden border-border p-0',
           open ? 'pointer-events-auto' : 'pointer-events-none',
-          'shadow-2xl shadow-slate-300/50 ring-1 ring-slate-200/80'
+          'shadow-2xl shadow-foreground/10 ring-1 ring-border'
         )}
       >
-        <CardHeader className="border-b border-slate-100 bg-white/90 p-5 backdrop-blur-sm">
+        <CardHeader className="border-b border-border bg-background/90 p-5 backdrop-blur-sm">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 space-y-1.5">
-              <div className="flex items-center gap-2 text-xs font-medium text-violet-600">
+              <div className="flex items-center gap-2 text-xs font-medium text-primary">
                 <Sparkles className="h-3.5 w-3.5" />
                 阅读器
               </div>
-              <CardTitle className="truncate text-lg text-slate-900">
+              <CardTitle className="truncate text-lg text-foreground">
                 {document?.name ?? '文档预览'}
               </CardTitle>
               <div className="flex flex-wrap items-center gap-2">
                 {document?.file_type && (
-                  <Badge variant="secondary" className="bg-violet-50 text-violet-700">
+                  <Badge variant="secondary" className="bg-primary/10 text-primary">
                     {getFileTypeLabel(document.file_type)}
                   </Badge>
                 )}
                 {document && (
-                  <Badge variant="outline" className="border-slate-200 text-slate-600">
+                  <Badge variant="outline" className="border-border text-muted-foreground">
                     {document.chunks} 个分块
                   </Badge>
                 )}
@@ -65,7 +65,7 @@ export default function DocumentPreviewPanel({
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+              className="h-8 w-8 shrink-0 rounded-xl border border-border/50 bg-muted/30 text-muted-foreground transition-colors hover:border-border hover:bg-muted hover:text-foreground"
               onClick={onClose}
             >
               <PanelRightClose className="h-4 w-4" />
@@ -73,39 +73,39 @@ export default function DocumentPreviewPanel({
           </div>
         </CardHeader>
 
-        <CardContent className="flex h-full flex-col overflow-hidden bg-slate-50/50 p-0">
+        <CardContent className="flex h-full flex-col overflow-hidden bg-muted/30 p-0">
           {loading ? (
-            <div className="flex h-full items-center justify-center text-slate-500">
+            <div className="flex h-full items-center justify-center text-muted-foreground">
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               正在加载文档内容...
             </div>
           ) : document ? (
             <>
-              <div className="border-b border-slate-100 bg-white px-5 py-3">
-                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-400">
+              <div className="border-b border-border bg-background px-5 py-3">
+                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground/70">
                   Document ID
                 </p>
-                <p className="break-all font-mono text-[11px] text-slate-500">{document.id}</p>
+                <p className="break-all font-mono text-[11px] text-muted-foreground">{document.id}</p>
               </div>
               <div className="flex-1 overflow-y-auto px-5 py-5">
-                <div className="rounded-2xl border border-slate-200 bg-white px-5 py-6 shadow-sm">
-                  <div className="mb-4 flex items-center gap-2 text-sm font-medium text-slate-700">
-                    <FileText className="h-4 w-4 text-violet-500" />
+                <div className="rounded-2xl border border-border bg-card px-5 py-6 shadow-sm">
+                  <div className="mb-4 flex items-center gap-2 text-sm font-medium text-foreground/80">
+                    <FileText className="h-4 w-4 text-primary" />
                     原文内容
                   </div>
-                  <div className="whitespace-pre-wrap break-words text-sm leading-7 text-slate-700">
+                  <div className="whitespace-pre-wrap break-words text-sm leading-7 text-foreground/90">
                     {document.content || '当前文档暂无可预览内容。'}
                   </div>
                 </div>
               </div>
             </>
           ) : (
-            <div className="flex h-full flex-col items-center justify-center px-8 text-center text-slate-500">
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
-                <FileText className="h-6 w-6 text-slate-400" />
+            <div className="flex h-full flex-col items-center justify-center px-8 text-center text-muted-foreground">
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-card shadow-sm ring-1 ring-border">
+                <FileText className="h-6 w-6 text-muted-foreground/70" />
               </div>
-              <p className="text-sm font-medium text-slate-700">选择一篇文档开始阅读</p>
-              <p className="mt-2 text-xs leading-6 text-slate-400">
+              <p className="text-sm font-medium text-foreground/80">选择一篇文档开始阅读</p>
+              <p className="mt-2 text-xs leading-6 text-muted-foreground/80">
                 点击列表中的“查看”，右侧会展开一个独立阅读器窗口。
               </p>
             </div>

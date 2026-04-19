@@ -30,29 +30,30 @@ export default function DocumentsPage() {
   } = useDocuments();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
+    <div className="min-h-screen bg-background">
       <main className="max-w-5xl mx-auto px-6 py-6 sm:py-8">
         <div className="mb-4">
           <Link
             to="/home"
-            className="inline-flex items-center gap-2 text-sm text-slate-500 transition-colors hover:text-slate-900"
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="w-4 h-4" />
             返回首页
           </Link>
         </div>
 
-        <Card className="relative overflow-hidden rounded-3xl border-slate-200 shadow-sm gap-0 p-0 ">
-          <CardHeader className="relative bg-gradient-to-r from-violet-100/70 via-sky-100/60 to-transparent p-4 sm:p-6">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <Card className="relative overflow-hidden rounded-3xl border-border bg-card shadow-sm gap-0 p-0 ">
+          <CardHeader className="relative overflow-hidden border-b border-border bg-card p-4 sm:p-6">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-background dark:from-primary/5 dark:via-card dark:to-card pointer-events-none" />
+            <div className="relative flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between z-10">
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-blue-500 text-white shadow-sm">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/60 text-primary-foreground shadow-sm">
                     <Files className="h-6 w-6" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-violet-600">Knowledge Base</p>
-                    <CardTitle className="text-2xl font-semibold text-slate-900">文档管理</CardTitle>
+                    <p className="text-sm font-medium text-primary">Knowledge Base</p>
+                    <CardTitle className="text-2xl font-semibold text-foreground">文档管理</CardTitle>
                   </div>
                 </div>
               </div>
@@ -62,11 +63,11 @@ export default function DocumentsPage() {
                   onClick={handleOpenUploadModal}
                   className={cn(
                     buttonVariants(),
-                    'gap-2 bg-violet-600 text-white hover:bg-violet-700'
+                    'gap-2 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-md shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/30 hover:from-primary/90 hover:to-primary/70 border-none'
                   )}
                 >
                   <Upload className="w-4 h-4" />
-                  去上传文档
+                  上传文档
                 </button>
               </div>
             </div>
@@ -74,52 +75,52 @@ export default function DocumentsPage() {
 
           <CardContent className="relative space-y-6 p-4 sm:p-6">
             <div className="space-y-2">
-              <div className="max-w-2xl text-sm leading-6 text-slate-600">
+              <div className="max-w-2xl text-sm leading-6 text-muted-foreground">
                 统一查看当前知识库中的文档，管理入库内容，删除无效文件，保持检索结果更干净。
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="secondary" className="bg-violet-50 text-violet-700">
+                <Badge variant="secondary" className="bg-primary/10 text-primary">
                   已入库 {documents.length} 个文档
                 </Badge>
-                <Badge variant="outline" className="border-slate-200 text-slate-600">
+                <Badge variant="outline" className="border-border text-muted-foreground">
                   共 {totalChunks} 个分块
                 </Badge>
-                <Badge variant="outline" className="border-slate-200 text-slate-600">
+                <Badge variant="outline" className="border-border text-muted-foreground">
                   删除后同步清理向量数据
                 </Badge>
               </div>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+              <div className="rounded-2xl border border-border bg-muted/50 p-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-slate-600 shadow-sm">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-background text-muted-foreground shadow-sm">
                     <Files className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500">文档数量</p>
-                    <p className="text-lg font-semibold text-slate-900">{documents.length}</p>
+                    <p className="text-xs text-muted-foreground">文档数量</p>
+                    <p className="text-lg font-semibold text-foreground">{documents.length}</p>
                   </div>
                 </div>
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+              <div className="rounded-2xl border border-border bg-muted/50 p-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-slate-600 shadow-sm">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-background text-muted-foreground shadow-sm">
                     <FileStack className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500">分块总数</p>
-                    <p className="text-lg font-semibold text-slate-900">{totalChunks}</p>
+                    <p className="text-xs text-muted-foreground">分块总数</p>
+                    <p className="text-lg font-semibold text-foreground">{totalChunks}</p>
                   </div>
                 </div>
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+              <div className="rounded-2xl border border-border bg-muted/50 p-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-slate-600 shadow-sm">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-background text-muted-foreground shadow-sm">
                     <Database className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500">数据状态</p>
-                    <p className="text-lg font-semibold text-slate-900">已同步</p>
+                    <p className="text-xs text-muted-foreground">数据状态</p>
+                    <p className="text-lg font-semibold text-foreground">已同步</p>
                   </div>
                 </div>
               </div>
@@ -128,16 +129,16 @@ export default function DocumentsPage() {
         </Card>
 
         <div className="mt-6">
-          <Card className="border-slate-200 shadow-sm p-0 gap-0">
-            <CardHeader className="border-b border-slate-100 p-4 sm:p-6">
-              <CardTitle className="text-slate-900">文档列表</CardTitle>
+          <Card className="border-border shadow-sm p-0 gap-0 bg-card">
+            <CardHeader className="border-b border-border p-4 sm:p-6">
+              <CardTitle className="text-foreground">文档列表</CardTitle>
               <CardDescription>
                 支持查看已上传文件和对应分块数量，也可在这里删除不需要的文档。
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4 sm:p-6 min-h-[320px]">
               {loading ? (
-                <div className="flex min-h-[240px] items-center justify-center text-slate-500">
+                <div className="flex min-h-[240px] items-center justify-center text-muted-foreground">
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                   正在加载文档列表...
                 </div>

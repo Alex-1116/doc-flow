@@ -31,12 +31,12 @@ export default function DocumentList({
 
   if (documents.length === 0) {
     return (
-      <div className="flex min-h-[240px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 py-12 text-slate-500">
-        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
-          <FileText className="w-6 h-6 text-slate-400" />
+      <div className="flex min-h-[240px] flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/30 py-12 text-muted-foreground">
+        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-card shadow-sm ring-1 ring-border">
+          <FileText className="w-6 h-6 text-muted-foreground" />
         </div>
-        <p className="text-sm font-medium text-slate-700">暂无文档</p>
-        <p className="mt-1 text-xs text-center text-slate-400">{emptyDescription}</p>
+        <p className="text-sm font-medium text-foreground">暂无文档</p>
+        <p className="mt-1 text-xs text-center text-muted-foreground">{emptyDescription}</p>
       </div>
     );
   }
@@ -58,32 +58,32 @@ export default function DocumentList({
             <div
               key={doc.id}
               className={cn(
-                'group relative flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-4 transition-all duration-300',
-                'hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md',
+                'group relative flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-4 transition-all duration-300',
+                'hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md',
                 isSelected &&
-                  'z-10 translate-x-2 scale-[1.01] border-violet-300 bg-violet-50/40 shadow-lg shadow-violet-100/80 after:absolute after:right-[-30px] after:top-1/2 after:h-px after:w-10 after:-translate-y-1/2 after:bg-gradient-to-r after:from-violet-300 after:to-transparent after:content-[""]'
+                  'z-10 translate-x-2 scale-[1.01] border-primary/40 bg-primary/5 shadow-lg shadow-primary/10 after:absolute after:right-[-30px] after:top-1/2 after:h-px after:w-10 after:-translate-y-1/2 after:bg-gradient-to-r after:from-primary/40 after:to-transparent after:content-[""]'
               )}
             >
-              <div className="flex min-w-0 items-center gap-4 overflow-hidden">
-                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-violet-50 text-violet-600 ring-1 ring-violet-100">
+              <div className="flex min-w-0 items-center gap-4 overflow-hidden p-[1px] -m-[1px]">
+                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
                   <FileText className="w-5 h-5" />
                 </div>
 
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h4 className="truncate text-sm font-medium text-slate-900" title={doc.name}>
+                    <h4 className="truncate text-sm font-medium text-foreground" title={doc.name}>
                       {doc.name}
                     </h4>
-                    <Badge variant="outline" className="border-slate-200 text-[11px] text-slate-500">
+                    <Badge variant="outline" className="border-border text-[11px] text-muted-foreground">
                       {getExtension(doc.name)}
                     </Badge>
                   </div>
-                  <div className="mt-2 flex flex-col items-start gap-2 text-xs text-slate-500 sm:flex-row sm:flex-wrap sm:items-center">
-                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">
+                  <div className="mt-2 flex flex-col items-start gap-2 text-xs text-muted-foreground sm:flex-row sm:flex-wrap sm:items-center">
+                    <span className="rounded-full bg-muted px-2.5 py-1 text-muted-foreground">
                       {doc.chunks} 个分块
                     </span>
                     <span
-                      className="max-w-full break-all font-mono text-[11px] text-slate-400"
+                      className="max-w-full break-all font-mono text-[11px] text-muted-foreground"
                       title={doc.id}
                     >
                       ID: {doc.id}
@@ -97,9 +97,9 @@ export default function DocumentList({
                   variant="ghost"
                   size="icon"
                   className={cn(
-                    'h-9 w-9 rounded-xl text-slate-400 transition-all',
-                    'hover:bg-violet-50 hover:text-violet-700',
-                    isSelected && 'bg-violet-50 text-violet-700 shadow-sm'
+                    'h-9 w-9 rounded-xl text-muted-foreground transition-all',
+                    'hover:bg-primary/10 hover:text-primary',
+                    isSelected && 'bg-primary/10 text-primary shadow-sm'
                   )}
                   onClick={() => onView?.(doc)}
                 >
@@ -109,8 +109,8 @@ export default function DocumentList({
                   variant="ghost"
                   size="icon"
                   className={cn(
-                    'h-9 w-9 rounded-xl text-slate-400 transition-all',
-                    'hover:bg-red-50 hover:text-red-600',
+                    'h-9 w-9 rounded-xl text-muted-foreground transition-all',
+                    'hover:bg-destructive/10 hover:text-destructive',
                   )}
                   onClick={() => onDelete?.(doc.id)}
                   disabled={deletingId === doc.id}

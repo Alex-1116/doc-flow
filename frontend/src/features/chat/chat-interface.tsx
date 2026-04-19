@@ -62,21 +62,24 @@ export default function ChatInterface({ documents }: ChatInterfaceProps) {
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border bg-white shadow-sm">
+    <div className="flex h-full w-full flex-col bg-background rounded-2xl border border-border shadow-sm overflow-hidden">
       <ChatHeader documents={documents} />
-      
-      <ChatMessageList 
-        messages={messages} 
-        loading={loading} 
-        messagesEndRef={messagesEndRef} 
-      />
-
+      <div className="flex-1 overflow-hidden">
+        <ChatMessageList 
+          messages={messages} 
+          isGenerating={loading} 
+        />
+      </div>
       <ChatInput 
         input={input}
         setInput={setInput}
         handleSend={handleSend}
         disabled={documents.length === 0 || loading}
-        placeholder={documents.length === 0 ? '请先上传文档...' : '输入您的问题...'}
+        placeholder={
+          documents.length === 0
+            ? '请先上传文档，再开始对话...'
+            : '输入您的问题，基于已选知识库提问...'
+        }
       />
     </div>
   );
