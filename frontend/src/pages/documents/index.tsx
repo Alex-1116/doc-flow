@@ -1,15 +1,17 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Database, FileStack, Files, Loader2, Upload } from 'lucide-react';
+import { ArrowLeft, Database, FileStack, Files, Loader2, Upload, LayoutGrid, List } from 'lucide-react';
 import DocumentList from '@/pages/documents/components/document-list';
 import DocumentPreviewPanel from '@/pages/documents/components/document-preview-panel';
 import UploadDocumentModal from '@/pages/documents/components/upload-document-modal';
-import { buttonVariants } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/libs/utils';
 import { useDocuments } from '@/pages/documents/hooks/use-documents';
 
 export default function DocumentsPage() {
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const {
     documents,
     totalChunks,
@@ -131,10 +133,40 @@ export default function DocumentsPage() {
         <div className="mt-6">
           <Card className="border-border shadow-sm p-0 gap-0 bg-card">
             <CardHeader className="border-b border-border p-4 sm:p-6">
-              <CardTitle className="text-foreground">文档列表</CardTitle>
-              <CardDescription>
-                支持查看已上传文件和对应分块数量，也可在这里删除不需要的文档。
-              </CardDescription>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex flex-col gap-1">
+                  <CardTitle className="text-foreground">文档列表</CardTitle>
+                  <CardDescription>
+                    支持查看已上传文件和对应分块数量，也可在这里删除不需要的文档。
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/50 p-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setViewMode('list')}
+                    className={cn(
+                      'h-8 px-3 text-muted-foreground hover:text-foreground',
+                      viewMode === 'list' && 'bg-background text-foreground shadow-sm'
+                    )}
+                  >
+                    <List className="mr-2 h-4 w-4" />
+                    列表
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setViewMode('grid')}
+                    className={cn(
+                      'h-8 px-3 text-muted-foreground hover:text-foreground',
+                      viewMode === 'grid' && 'bg-background text-foreground shadow-sm'
+                    )}
+                  >
+                    <LayoutGrid className="mr-2 h-4 w-4" />
+                    网格
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="p-4 sm:p-6 min-h-[320px]">
               {loading ? (
@@ -145,6 +177,7 @@ export default function DocumentsPage() {
               ) : (
                 <DocumentList
                   documents={documents}
+                  layout={viewMode}
                   emptyDescription="请先在上方上传文档"
                   deletingId={deletingId}
                   deleteError={deleteError}

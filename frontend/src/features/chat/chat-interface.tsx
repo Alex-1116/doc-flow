@@ -64,7 +64,7 @@ export default function ChatInterface({ documents }: ChatInterfaceProps) {
   return (
     <div className="flex h-full w-full flex-col bg-background rounded-2xl border border-border shadow-sm overflow-hidden">
       <ChatHeader documents={documents} />
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 bg-background/90 overflow-hidden">
         <ChatMessageList 
           messages={messages} 
           isGenerating={loading} 
