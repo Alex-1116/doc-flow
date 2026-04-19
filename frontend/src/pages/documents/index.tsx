@@ -1,68 +1,28 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Database, FileStack, Files, Loader2, Upload } from 'lucide-react';
-import DocumentList from '@/pages/documents/document-list';
-import DocumentPreviewPanel from '@/pages/documents/document-preview-panel';
-import { documentApi, type DocumentDetailResponse, type DocumentListItem } from '@/api/document';
-import { useChatStore } from '@/store/useChatStore';
+import DocumentList from '@/pages/documents/components/document-list';
+import DocumentPreviewPanel from '@/pages/documents/components/document-preview-panel';
 import { buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/libs/utils';
+import { useDocuments } from '@/pages/documents/hooks/use-documents';
 
 export default function DocumentsPage() {
-  const documents = useChatStore((state) => state.documents);
-  const setDocuments = useChatStore((state) => state.setDocuments);
-  const [loading, setLoading] = useState(true);
-  const [previewLoading, setPreviewLoading] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
-  const [previewDocument, setPreviewDocument] = useState<DocumentDetailResponse | null>(null);
-  const totalChunks = documents.reduce((sum, doc) => sum + doc.chunks, 0);
-
-  useEffect(() => {
-    const loadDocuments = async () => {
-      try {
-        const response = await documentApi.list();
-        setDocuments(response.documents ?? []);
-      } catch (error) {
-        console.error('获取文档列表失败:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void loadDocuments();
-  }, [setDocuments]);
-
-  useEffect(() => {
-    if (selectedDocumentId && !documents.some((doc) => doc.id === selectedDocumentId)) {
-      setSelectedDocumentId(null);
-      setPreviewDocument(null);
-      setPreviewOpen(false);
-    }
-  }, [documents, selectedDocumentId]);
-
-  const handleViewDocument = async (document: DocumentListItem) => {
-    setSelectedDocumentId(document.id);
-    setPreviewOpen(true);
-    setPreviewLoading(true);
-
-    try {
-      const detail = await documentApi.getDetail(document.id);
-      setPreviewDocument(detail);
-    } catch (error) {
-      console.error('获取文档详情失败:', error);
-    } finally {
-      setPreviewLoading(false);
-    }
-  };
-
-  const handleClosePreview = () => {
-    setPreviewOpen(false);
-    setSelectedDocumentId(null);
-    setPreviewDocument(null);
-  };
+  const {
+    documents,
+    totalChunks,
+    loading,
+    previewLoading,
+    previewOpen,
+    previewDocument,
+    selectedDocumentId,
+    deletingId,
+    deleteError,
+    handleViewDocument,
+    handleClosePreview,
+    handleDeleteDocument,
+  } = useDocuments();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
@@ -177,9 +137,13 @@ export default function DocumentsPage() {
                 </div>
               ) : (
                 <DocumentList
+                    documents={documents}
                   emptyDescription="请先返回首页上传文档"
+                    deletingId={deletingId}
+                    deleteError={deleteError}
                   selectedDocumentId={selectedDocumentId}
                   onView={handleViewDocument}
+                    onDelete={handleDeleteDocument}
                 />
               )}
             </CardContent>
