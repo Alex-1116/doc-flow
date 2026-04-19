@@ -25,10 +25,6 @@ interface ChatStore {
   messages: Message[];
   addMessage: (message: Message) => void;
   clearMessages: () => void;
-  
-  // 界面状态
-  activeTab: 'upload' | 'chat';
-  setActiveTab: (tab: 'upload' | 'chat') => void;
 }
 
 export const useChatStore = create<ChatStore>((set) => ({
@@ -43,8 +39,4 @@ export const useChatStore = create<ChatStore>((set) => ({
   messages: [],
   addMessage: (message: Message) => set((state) => ({ messages: [...state.messages, message] })),
   clearMessages: () => set({ messages: [] }),
-  
-  // 界面状态
-  activeTab: 'upload',
-  setActiveTab: (tab: 'upload' | 'chat') => set({ activeTab: tab }),
 }));

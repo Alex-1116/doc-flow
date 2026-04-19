@@ -26,7 +26,7 @@ export default function DocumentPreviewPanel({
   return (
     <aside
       className={cn(
-        'pointer-events-none fixed right-6 top-1/2 z-40 hidden h-[80vh] -translate-y-1/2 xl:block',
+        'pointer-events-none fixed right-6 top-1/2 z-40 hidden h-[78vh] -translate-y-1/2 xl:block',
         'transition-all duration-300 ease-out',
         open ? 'translate-x-0 -translate-y-1/2 opacity-100' : 'translate-x-10 -translate-y-1/2 opacity-0'
       )}

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, Database, FileStack, Files, Loader2, Upload } from 'lucide-react';
 import DocumentList from '@/pages/documents/components/document-list';
 import DocumentPreviewPanel from '@/pages/documents/components/document-preview-panel';
+import UploadDocumentModal from '@/pages/documents/components/upload-document-modal';
 import { buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,10 +16,14 @@ export default function DocumentsPage() {
     loading,
     previewLoading,
     previewOpen,
+    uploadModalOpen,
     previewDocument,
     selectedDocumentId,
     deletingId,
     deleteError,
+    handleUploadSuccess,
+    handleOpenUploadModal,
+    handleCloseUploadModal,
     handleViewDocument,
     handleClosePreview,
     handleDeleteDocument,
@@ -52,16 +57,17 @@ export default function DocumentsPage() {
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <Link
-                  to="/home"
+                <button
+                  type="button"
+                  onClick={handleOpenUploadModal}
                   className={cn(
                     buttonVariants(),
-                    'gap-2 bg-violet-600 text-white hover:bg-violet-700 [a]:hover:bg-violet-700 [a]:hover:text-white'
+                    'gap-2 bg-violet-600 text-white hover:bg-violet-700'
                   )}
                 >
                   <Upload className="w-4 h-4" />
-                  上传新文档
-                </Link>
+                  去上传文档
+                </button>
               </div>
             </div>
           </CardHeader>
@@ -137,13 +143,13 @@ export default function DocumentsPage() {
                 </div>
               ) : (
                 <DocumentList
-                    documents={documents}
-                  emptyDescription="请先返回首页上传文档"
-                    deletingId={deletingId}
-                    deleteError={deleteError}
+                  documents={documents}
+                  emptyDescription="请先在上方上传文档"
+                  deletingId={deletingId}
+                  deleteError={deleteError}
                   selectedDocumentId={selectedDocumentId}
                   onView={handleViewDocument}
-                    onDelete={handleDeleteDocument}
+                  onDelete={handleDeleteDocument}
                 />
               )}
             </CardContent>
@@ -156,6 +162,11 @@ export default function DocumentsPage() {
         loading={previewLoading}
         document={previewDocument}
         onClose={handleClosePreview}
+      />
+      <UploadDocumentModal
+        open={uploadModalOpen}
+        onClose={handleCloseUploadModal}
+        onSuccess={handleUploadSuccess}
       />
     </div>
   );

@@ -4,12 +4,14 @@ import { useChatStore, type Document } from '@/store/useChatStore';
 
 export function useDocuments() {
   const documents = useChatStore((state) => state.documents);
+  const addDocument = useChatStore((state) => state.addDocument);
   const setDocuments = useChatStore((state) => state.setDocuments);
   const removeDocument = useChatStore((state) => state.removeDocument);
 
   const [loading, setLoading] = useState(true);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [previewDocument, setPreviewDocument] = useState<DocumentDetailResponse | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -76,6 +78,14 @@ export function useDocuments() {
     setPreviewDocument(null);
   }, []);
 
+  const handleOpenUploadModal = useCallback(() => {
+    setUploadModalOpen(true);
+  }, []);
+
+  const handleCloseUploadModal = useCallback(() => {
+    setUploadModalOpen(false);
+  }, []);
+
   const handleDeleteDocument = useCallback(
     async (id: string) => {
       try {
@@ -97,16 +107,30 @@ export function useDocuments() {
     [handleClosePreview, removeDocument, selectedDocumentId]
   );
 
+  const handleUploadSuccess = useCallback(
+    (doc: { doc_id: string; filename: string; chunks: number }) => {
+      const exists = documents.some((item) => item.id === doc.doc_id);
+      if (!exists) {
+        addDocument({ id: doc.doc_id, name: doc.filename, chunks: doc.chunks });
+      }
+    },
+    [addDocument, documents]
+  );
+
   return {
     documents,
     totalChunks,
     loading,
     previewLoading,
     previewOpen,
+    uploadModalOpen,
     previewDocument,
     selectedDocumentId,
     deletingId,
     deleteError,
+    handleUploadSuccess,
+    handleOpenUploadModal,
+    handleCloseUploadModal,
     handleViewDocument,
     handleClosePreview,
     handleDeleteDocument,

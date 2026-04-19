@@ -1,19 +1,14 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, Upload, MessageSquare } from 'lucide-react';
-import FileUpload from '@/features/document/file-upload';
+import { Files, MessageSquare } from 'lucide-react';
 import ChatInterface from '@/features/chat/chat-interface';
 import { useChatStore } from '@/store/useChatStore';
 import { documentApi } from '@/api/document';
 import { buttonVariants } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/libs/utils';
 
 export default function Home() {
-  const activeTab = useChatStore((state) => state.activeTab);
-  const setActiveTab = useChatStore((state) => state.setActiveTab);
   const documents = useChatStore((state) => state.documents);
-  const addDocument = useChatStore((state) => state.addDocument);
   const setDocuments = useChatStore((state) => state.setDocuments);
 
   useEffect(() => {
@@ -21,76 +16,45 @@ export default function Home() {
     documentApi.list().then((res) => {
       if (res.documents && res.documents.length > 0) {
         setDocuments(res.documents);
-        setActiveTab('chat'); // 如果有文档，默认直接进入问答界面
       }
     }).catch((err) => {
       console.error('获取文档列表失败:', err);
     });
-  }, [setDocuments, setActiveTab]);
-
-  const handleUploadSuccess = (doc: { doc_id: string; filename: string; chunks: number }) => {
-    addDocument({ id: doc.doc_id, name: doc.filename, chunks: doc.chunks });
-    setActiveTab('chat');
-  };
+  }, [setDocuments]);
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
-      <header className="bg-white shadow-sm border-b flex-shrink-0">
-        <div className="max-w-5xl mx-auto w-full px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-500 rounded-lg flex items-center justify-center">
-                <FileText className="w-6 h-6 text-white" />
+    <div className="h-full flex flex-col bg-gray-50 overflow-hidden">
+      <main className="flex-1 overflow-hidden w-full max-w-5xl mx-auto px-6 py-6 flex flex-col">
+        {documents.length === 0 ? (
+          <div className="flex flex-1 items-center justify-center">
+            <div className="w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-50 text-violet-600 ring-1 ring-violet-100">
+                <Files className="h-8 w-8" />
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">DocFlow</h1>
-                <p className="text-sm text-gray-500">智能文档摘要与问答系统</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {documents.length > 0 && (
-                <span className="text-sm text-gray-500">
-                  已上传 {documents.length} 个文档
+              <h2 className="text-2xl font-semibold text-slate-900">工作台</h2>
+              <p className="mt-3 text-sm leading-6 text-slate-500">
+                当前还没有可用文档。请先前往文档管理上传知识库内容，再回到这里开始问答。
+              </p>
+              <div className="mt-6 flex items-center justify-center gap-3">
+                <Link
+                  to="/documents"
+                  className={cn(buttonVariants(), 'gap-2 bg-violet-600 text-white hover:bg-violet-700')}
+                >
+                  <Files className="h-4 w-4" />
+                  前往文档管理
+                </Link>
+                <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-sm text-slate-500">
+                  <MessageSquare className="h-4 w-4" />
+                  上传后即可开始问答
                 </span>
-              )}
-              <Link
-                to="/documents"
-                className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'gap-2')}
-              >
-                管理文档
-              </Link>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
-
-      <main className="flex-1 overflow-hidden w-full max-w-5xl mx-auto px-6 py-6 flex flex-col">
-        <Tabs 
-          value={activeTab} 
-          onValueChange={(value) => setActiveTab(value as 'upload' | 'chat')}
-          className="flex-1 flex flex-col gap-4 min-h-0"
-        >
-          <TabsList className="flex-shrink-0 self-start group-data-horizontal/tabs:h-auto p-1">
-            <TabsTrigger value="upload" className="flex items-center gap-2 py-2 px-6 data-[state=active]:bg-purple-600 data-[state=active]:text-white transition-colors text-base">
-              <Upload className="w-4 h-4 text-blue-500 " />
-              上传文档
-            </TabsTrigger>
-            <TabsTrigger value="chat" className="flex items-center gap-2 py-2 px-6 data-[state=active]:bg-purple-600 data-[state=active]:text-white transition-colors text-base">
-              <MessageSquare className="w-4 h-4 text-purple-500 " />
-              开始问答
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="upload" className="h-full overflow-y-auto mt-0 data-[state=active]:block">
-            <div className="max-w-2xl mx-auto py-4">
-              <FileUpload onSuccess={handleUploadSuccess} />
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="chat" className="mt-0 h-full min-h-0 data-[state=active]:flex data-[state=active]:flex-col">
+        ) : (
+          <div className="flex-1 min-h-0 flex flex-col">
             <ChatInterface documents={documents} />
-          </TabsContent>
-        </Tabs>
+          </div>
+        )}
       </main>
     </div>
   );
