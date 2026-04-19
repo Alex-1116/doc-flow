@@ -13,10 +13,24 @@ export interface QueryResponse {
   sources: Array<{ content: string; metadata: Record<string, string> }>;
 }
 
+export interface DocumentListItem {
+  id: string;
+  name: string;
+  chunks: number;
+}
+
+export interface DocumentDetailResponse {
+  id: string;
+  name: string;
+  file_type: string;
+  chunks: number;
+  content: string;
+}
+
 export const documentApi = {
   // 获取文档列表
-  list: async (): Promise<{ documents: Array<{ id: string; name: string; chunks: number }> }> => {
-    const response = await apiClient.get<{ documents: Array<{ id: string; name: string; chunks: number }> }>(
+  list: async (): Promise<{ documents: DocumentListItem[] }> => {
+    const response = await apiClient.get<{ documents: DocumentListItem[] }>(
       API_ENDPOINTS.documents
     );
     return response.data;
@@ -51,6 +65,14 @@ export const documentApi = {
   // 删除单个文档
   delete: async (docId: string): Promise<{ status: string; doc_id: string }> => {
     const response = await apiClient.delete<{ status: string; doc_id: string }>(
+      `${API_ENDPOINTS.documents}/${docId}`
+    );
+    return response.data;
+  },
+
+  // 获取文档详情
+  getDetail: async (docId: string): Promise<DocumentDetailResponse> => {
+    const response = await apiClient.get<DocumentDetailResponse>(
       `${API_ENDPOINTS.documents}/${docId}`
     );
     return response.data;

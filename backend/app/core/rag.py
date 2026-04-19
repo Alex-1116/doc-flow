@@ -192,6 +192,52 @@ class RAGEngine:
             logger.error(f"删除文档失败: {e}")
             return False
 
+    def get_document_detail(self, doc_id: str) -> Optional[Dict[str, Any]]:
+        """获取文档详情及可阅读正文"""
+        if self._client is None:
+            try:
+                self._client = self._init_chroma_client()
+            except Exception as e:
+                logger.error(f"无法连接 ChromaDB: {e}")
+                return None
+
+        try:
+            collection = self._client.get_collection(settings.CHROMA_COLLECTION)
+            results = collection.get(
+                where={"doc_id": doc_id},
+                include=["documents", "metadatas"],
+            )
+        except Exception as e:
+            logger.error(f"获取文档详情失败: {e}")
+            return None
+
+        documents = results.get("documents") or []
+        metadatas = results.get("metadatas") or []
+
+        if not documents:
+            return None
+
+        # 尽可能按页码恢复文档顺序；没有页码时沿用存储返回顺序。
+        ordered_chunks = sorted(
+            zip(documents, metadatas),
+            key=lambda item: (
+                item[1].get("page", 0) if isinstance(item[1], dict) else 0,
+            ),
+        )
+
+        first_meta = metadatas[0] if metadatas and isinstance(metadatas[0], dict) else {}
+        content = "\n\n".join(
+            chunk.strip() for chunk, _meta in ordered_chunks if isinstance(chunk, str) and chunk.strip()
+        )
+
+        return {
+            "id": doc_id,
+            "name": first_meta.get("filename", "未知文档"),
+            "file_type": first_meta.get("file_type", ""),
+            "chunks": len(documents),
+            "content": content,
+        }
+
     def query(self, question: str, k: int = 4) -> Dict[str, Any]:
         """查询文档"""
         self.ensure_initialized()

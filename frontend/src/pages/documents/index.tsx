@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Database, FileStack, Files, Loader2, Upload } from 'lucide-react';
 import DocumentList from '@/pages/documents/document-list';
-import { documentApi } from '@/api/document';
+import DocumentPreviewPanel from '@/pages/documents/document-preview-panel';
+import { documentApi, type DocumentDetailResponse, type DocumentListItem } from '@/api/document';
 import { useChatStore } from '@/store/useChatStore';
 import { buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +14,10 @@ export default function DocumentsPage() {
   const documents = useChatStore((state) => state.documents);
   const setDocuments = useChatStore((state) => state.setDocuments);
   const [loading, setLoading] = useState(true);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
+  const [previewDocument, setPreviewDocument] = useState<DocumentDetailResponse | null>(null);
   const totalChunks = documents.reduce((sum, doc) => sum + doc.chunks, 0);
 
   useEffect(() => {
@@ -30,9 +35,38 @@ export default function DocumentsPage() {
     void loadDocuments();
   }, [setDocuments]);
 
+  useEffect(() => {
+    if (selectedDocumentId && !documents.some((doc) => doc.id === selectedDocumentId)) {
+      setSelectedDocumentId(null);
+      setPreviewDocument(null);
+      setPreviewOpen(false);
+    }
+  }, [documents, selectedDocumentId]);
+
+  const handleViewDocument = async (document: DocumentListItem) => {
+    setSelectedDocumentId(document.id);
+    setPreviewOpen(true);
+    setPreviewLoading(true);
+
+    try {
+      const detail = await documentApi.getDetail(document.id);
+      setPreviewDocument(detail);
+    } catch (error) {
+      console.error('获取文档详情失败:', error);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const handleClosePreview = () => {
+    setPreviewOpen(false);
+    setSelectedDocumentId(null);
+    setPreviewDocument(null);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
-      <main className="max-w-5xl mx-auto px-6 py-8 sm:py-10">
+      <main className="max-w-5xl mx-auto px-6 py-6 sm:py-8">
         <div className="mb-4">
           <Link
             to="/home"
@@ -127,25 +161,38 @@ export default function DocumentsPage() {
           </CardContent>
         </Card>
 
-        <Card className="mt-6 border-slate-200 shadow-sm p-0 gap-0">
-          <CardHeader className="border-b border-slate-100 p-4 sm:p-6">
-            <CardTitle className="text-slate-900">文档列表</CardTitle>
-            <CardDescription>
-              支持查看已上传文件和对应分块数量，也可在这里删除不需要的文档。
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-6 min-h-[320px]">
-            {loading ? (
-              <div className="flex min-h-[240px] items-center justify-center text-slate-500">
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                正在加载文档列表...
-              </div>
-            ) : (
-              <DocumentList emptyDescription="请先返回首页上传文档" />
-            )}
-          </CardContent>
-        </Card>
+        <div className="mt-6">
+          <Card className="border-slate-200 shadow-sm p-0 gap-0">
+            <CardHeader className="border-b border-slate-100 p-4 sm:p-6">
+              <CardTitle className="text-slate-900">文档列表</CardTitle>
+              <CardDescription>
+                支持查看已上传文件和对应分块数量，也可在这里删除不需要的文档。
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-4 sm:p-6 min-h-[320px]">
+              {loading ? (
+                <div className="flex min-h-[240px] items-center justify-center text-slate-500">
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  正在加载文档列表...
+                </div>
+              ) : (
+                <DocumentList
+                  emptyDescription="请先返回首页上传文档"
+                  selectedDocumentId={selectedDocumentId}
+                  onView={handleViewDocument}
+                />
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </main>
+
+      <DocumentPreviewPanel
+        open={previewOpen}
+        loading={previewLoading}
+        document={previewDocument}
+        onClose={handleClosePreview}
+      />
     </div>
   );
 }

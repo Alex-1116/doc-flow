@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 
 from app.core.config import settings
 from app.core.rag import get_rag_engine, RAGEngine
+from app.models.schemas import DocumentDetailResponse
 from app.services.parsers import DocumentParser, managed_temp_file
 
 logger = logging.getLogger(__name__)
@@ -114,3 +115,19 @@ async def list_documents(rag: RAGEngine = Depends(get_rag)):
     except Exception as e:
         logger.error(f"列出文档失败: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"列出文档失败: {str(e)}")
+
+
+@router.get("/{doc_id}", response_model=DocumentDetailResponse)
+async def get_document_detail(doc_id: str, rag: RAGEngine = Depends(get_rag)):
+    """获取文档详情和正文预览"""
+    try:
+        detail = rag.get_document_detail(doc_id)
+        if not detail:
+            raise HTTPException(status_code=404, detail="文档不存在")
+
+        return detail
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"获取文档详情失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"获取文档详情失败: {str(e)}")

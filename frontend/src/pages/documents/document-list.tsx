@@ -1,18 +1,23 @@
 import { useState } from 'react';
 import { useChatStore } from '@/store/useChatStore';
 import { documentApi } from '@/api/document';
-import { FileText, Trash2, AlertCircle, Loader2 } from 'lucide-react';
+import { FileText, Eye, Trash2, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/libs/utils';
+import type { DocumentListItem } from '@/api/document';
 
 interface DocumentListProps {
   emptyDescription?: string;
+  selectedDocumentId?: string | null;
+  onView?: (document: DocumentListItem) => void;
 }
 
 export default function DocumentList({
   emptyDescription = '请先上传文档',
+  selectedDocumentId,
+  onView,
 }: DocumentListProps) {
   const documents = useChatStore((state) => state.documents);
   const removeDocument = useChatStore((state) => state.removeDocument);
@@ -64,8 +69,12 @@ export default function DocumentList({
           <div
             key={doc.id}
             className={cn(
-              'group flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-4 transition-all',
-              'hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md'
+              'group relative flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-4 transition-all duration-300',
+              'hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md',
+              selectedDocumentId === doc.id &&
+                'z-10 translate-x-2 scale-[1.01] border-violet-300 bg-violet-50/40 shadow-lg shadow-violet-100/80',
+              selectedDocumentId === doc.id &&
+                'after:absolute after:right-[-30px] after:top-1/2 after:h-px after:w-10 after:-translate-y-1/2 after:bg-gradient-to-r after:from-violet-300 after:to-transparent after:content-[""]'
             )}
           >
             <div className="flex min-w-0 items-center gap-4 overflow-hidden">
@@ -96,23 +105,36 @@ export default function DocumentList({
               </div>
             </div>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn(
-                'ml-3 h-9 w-9 rounded-xl text-slate-400 transition-all',
-                'hover:bg-red-50 hover:text-red-600',
-                'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
-              )}
-              onClick={() => handleDelete(doc.id)}
-              disabled={deletingId === doc.id}
-            >
-              {deletingId === doc.id ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Trash2 className="w-4 h-4" />
-              )}
-            </Button>
+            <div className="ml-3 flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  'h-9 w-9 rounded-xl text-slate-400 transition-all',
+                  'hover:bg-violet-50 hover:text-violet-700',
+                  selectedDocumentId === doc.id && 'bg-violet-50 text-violet-700 shadow-sm'
+                )}
+                onClick={() => onView?.(doc)}
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  'h-9 w-9 rounded-xl text-slate-400 transition-all',
+                  'hover:bg-red-50 hover:text-red-600',
+                )}
+                onClick={() => handleDelete(doc.id)}
+                disabled={deletingId === doc.id}
+              >
+                {deletingId === doc.id ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
+              </Button>
+            </div>
           </div>
         ))}
       </div>

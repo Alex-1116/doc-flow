@@ -18,25 +18,23 @@ export function ChatHeader({ documents }: ChatHeaderProps) {
   if (documents.length === 0) return null;
 
   return (
-    <div className="px-6 py-3 bg-purple-50 border-b flex items-center justify-between">
+    <div className="flex items-center justify-between border-b bg-purple-50 px-6 py-3">
       <div className="flex items-center gap-3">
-        <span className="text-sm font-medium text-purple-700 whitespace-nowrap">当前知识库:</span>
+        <span className="whitespace-nowrap text-sm font-medium text-slate-500">当前知识库</span>
         <Popover>
           <PopoverTrigger>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold text-purple-700 bg-white border border-purple-200 shadow-sm hover:bg-purple-50 hover:border-purple-300 hover:text-purple-800 hover:shadow-md transition-all duration-200 cursor-pointer group">
-              <div className="p-1 bg-purple-100 rounded-full group-hover:bg-purple-200 transition-colors">
-                <Library className="w-3.5 h-3.5" />
-              </div>
-              <span>{documents.length} 份可用文档</span>
+            <div className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-700 transition-all duration-200 hover:border-violet-200 hover:bg-white hover:text-violet-700 hover:shadow-sm">
+              <Library className="h-4 w-4 text-violet-500" />
+              <span>{documents.length} 份文档</span>
             </div>
           </PopoverTrigger>
-          <PopoverContent align="start" className="w-80 p-0 overflow-hidden shadow-lg border-purple-100">
-            <div className="p-3 border-b bg-gray-50/50">
+          <PopoverContent align="start" className="w-80 overflow-hidden border-slate-200 gap-0 p-0 shadow-lg">
+            <div className="border-b bg-slate-50/70 p-3">
               <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
                 <Input
                   placeholder="搜索文档名称..."
-                  className="pl-9 h-9 bg-white"
+                  className="h-9 bg-white pl-9"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -44,7 +42,7 @@ export function ChatHeader({ documents }: ChatHeaderProps) {
             </div>
             <div className="max-h-[300px] overflow-y-auto scrollbar-thin p-2">
               {filteredDocuments.length === 0 ? (
-                <div className="py-6 text-center text-sm text-gray-500">
+                <div className="py-6 text-center text-sm text-slate-500">
                   未找到匹配的文档
                 </div>
               ) : (
@@ -52,9 +50,9 @@ export function ChatHeader({ documents }: ChatHeaderProps) {
                   {filteredDocuments.map((d) => (
                     <div
                       key={d.id}
-                      className="px-3 py-2 rounded-md hover:bg-purple-50 transition-colors flex flex-col gap-1"
+                      className="flex flex-col gap-1 rounded-xl px-3 py-2 transition-colors hover:bg-violet-50/70"
                     >
-                      <span className="text-sm font-medium text-gray-700 truncate" title={d.name}>
+                      <span className="truncate text-sm font-medium text-slate-700" title={d.name}>
                         {d.name}
                       </span>
                     </div>
