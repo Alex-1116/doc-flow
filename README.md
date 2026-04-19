@@ -158,9 +158,9 @@ docker compose down
 docker compose ps
 # 重启服务
 docker compose restart
-# 热更
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 
+# 热更配置 
+docker-compose.override.yml
 
 # 打开浏览器
 open http://localhost:3000
