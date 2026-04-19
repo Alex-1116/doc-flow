@@ -20,9 +20,13 @@ from app.core.providers.common import retry_with_backoff
 
 logger = logging.getLogger(__name__)
 
+class ChromaUnavailableError(RuntimeError):
+    """ChromaDB 不可用。"""
+
 
 class RAGEngine:
-    """RAG 引擎 - 支持延迟初始化和连接重试"""
+    """RAG 引擎 - 支持延迟初始化和连接重试。"""
+
 
     _instance: Optional['RAGEngine'] = None
     _initialized: bool = False
@@ -82,11 +86,13 @@ class RAGEngine:
 
     def _ensure_embeddings(self) -> None:
         """按需初始化 Embedding 客户端。"""
+        # 上传和检索依赖向量化能力，但不一定需要 LLM。
         if self._embeddings is None:
             self._embeddings = create_embeddings()
 
     def _ensure_llm(self) -> None:
         """按需初始化 LLM 客户端。"""
+        # 只有问答这类生成场景才拉起 LLM，避免启动/热重载时产生外部调用。
         if self._llm is None:
             self._llm = create_llm()
 
@@ -146,7 +152,7 @@ class RAGEngine:
         """获取向量存储"""
         self._ensure_chroma_client()
         self._ensure_embeddings()
-        # 确保集合存在
+        # 向量存储只依赖 Chroma 和 Embedding，不依赖 LLM。
         self._get_or_create_collection()
 
         return Chroma(
@@ -157,6 +163,7 @@ class RAGEngine:
 
     def add_documents(self, documents: List[Document], metadatas: Optional[List[Dict]] = None) -> tuple:
         """添加文档，支持事务回滚"""
+        # 上传阶段只做切片和向量化，因此不主动初始化 LLM。
         self._ensure_chroma_client()
         self._ensure_text_splitter()
         self._ensure_embeddings()
@@ -213,14 +220,53 @@ class RAGEngine:
             logger.error(f"删除文档失败: {e}")
             return False
 
+    def list_documents(self) -> List[Dict[str, Any]]:
+        """列出所有文档。
+
+        ChromaDB 连接失败时抛出 ChromaUnavailableError；
+        集合不存在时返回空列表。
+        """
+        # 列表页属于只读存储能力，不应因为模型不可用而失败。
+        try:
+            self._ensure_chroma_client()
+        except Exception as e:
+            logger.error(f"无法连接 ChromaDB: {e}", exc_info=True)
+            raise ChromaUnavailableError(str(e)) from e
+
+        try:
+            collection = self._client.get_collection(settings.CHROMA_COLLECTION)
+            results = collection.get(include=["metadatas"])
+        except Exception as e:
+            message = str(e).lower()
+            if "does not exist" in message or "not found" in message:
+                return []
+            logger.error(f"读取文档列表失败: {e}", exc_info=True)
+            raise ChromaUnavailableError(str(e)) from e
+
+        docs_map: Dict[str, Dict[str, Any]] = {}
+        for meta in (results.get("metadatas") or []):
+            if not meta:
+                continue
+            doc_id = meta.get("doc_id")
+            if doc_id and doc_id not in docs_map:
+                docs_map[doc_id] = {
+                    "id": doc_id,
+                    "name": meta.get("filename", "未知文档"),
+                    "chunks": 0,
+                }
+            if doc_id:
+                docs_map[doc_id]["chunks"] += 1
+
+        return list(docs_map.values())
+
     def get_document_detail(self, doc_id: str) -> Optional[Dict[str, Any]]:
         """获取文档详情及可阅读正文"""
-        if self._client is None:
-            try:
-                self._client = self._init_chroma_client()
-            except Exception as e:
-                logger.error(f"无法连接 ChromaDB: {e}")
-                return None
+        # 详情预览只需要从 Chroma 聚合原始分块，不需要 Embedding / LLM。
+        try:
+            self._ensure_chroma_client()
+        except Exception as e:
+            logger.error(f"无法连接 ChromaDB: {e}", exc_info=True)
+            raise ChromaUnavailableError(str(e)) from e
 
         try:
             collection = self._client.get_collection(settings.CHROMA_COLLECTION)
@@ -229,8 +275,8 @@ class RAGEngine:
                 include=["documents", "metadatas"],
             )
         except Exception as e:
-            logger.error(f"获取文档详情失败: {e}")
-            return None
+            logger.error(f"获取文档详情失败: {e}", exc_info=True)
+            raise ChromaUnavailableError(str(e)) from e
 
         documents = results.get("documents") or []
         metadatas = results.get("metadatas") or []
@@ -261,6 +307,7 @@ class RAGEngine:
 
     def query(self, question: str, k: int = 4) -> Dict[str, Any]:
         """查询文档"""
+        # 问答同时依赖检索和生成，因此这里才会拉起 Embedding + LLM。
         self._ensure_chroma_client()
         self._ensure_text_splitter()
         self._ensure_embeddings()
@@ -322,6 +369,7 @@ class RAGEngine:
         }
 
         if deep:
+            # deep health 仅用于人工排查，默认健康检查不会走到这里。
             status["llm"] = await check_llm_health()
             status["llm"]["checked"] = True
             status["embeddings"] = await check_embeddings_health()

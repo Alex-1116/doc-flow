@@ -4,7 +4,7 @@ from fastapi import APIRouter, File, UploadFile, HTTPException, Depends, Request
 from fastapi.responses import JSONResponse
 
 from app.core.config import settings
-from app.core.rag import get_rag_engine, RAGEngine
+from app.core.rag import ChromaUnavailableError, get_rag_engine, RAGEngine
 from app.models.schemas import DocumentDetailResponse
 from app.services.parsers import DocumentParser, managed_temp_file
 
@@ -82,36 +82,10 @@ async def delete_document(doc_id: str, rag: RAGEngine = Depends(get_rag)):
 async def list_documents(rag: RAGEngine = Depends(get_rag)):
     """列出所有文档"""
     try:
-        # 即使 RAG 引擎（如 LLM/Embedding）初始化失败，也尝试直接读取 ChromaDB 以返回文档列表
-        if rag._client is None:
-            try:
-                rag._client = rag._init_chroma_client()
-            except Exception as e:
-                logger.warning(f"无法连接 ChromaDB: {e}")
-                return JSONResponse({"documents": []})
-
-        try:
-            coll = rag._client.get_collection(settings.CHROMA_COLLECTION)
-            results = coll.get(include=["metadatas"])
-        except Exception:
-            # 集合不存在或其他 ChromaDB 错误时，返回空列表
-            return JSONResponse({"documents": []})
-        
-        docs_map = {}
-        for meta in (results.get("metadatas") or []):
-            if not meta:
-                continue
-            doc_id = meta.get("doc_id")
-            if doc_id and doc_id not in docs_map:
-                docs_map[doc_id] = {
-                    "id": doc_id,
-                    "name": meta.get("filename", "未知文档"),
-                    "chunks": 0
-                }
-            if doc_id:
-                docs_map[doc_id]["chunks"] += 1
-                
-        return JSONResponse({"documents": list(docs_map.values())})
+        return JSONResponse({"documents": rag.list_documents()})
+    except ChromaUnavailableError as e:
+        logger.error(f"列出文档失败，ChromaDB 不可用: {e}", exc_info=True)
+        raise HTTPException(status_code=503, detail="文档存储服务暂时不可用，请稍后重试")
     except Exception as e:
         logger.error(f"列出文档失败: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"列出文档失败: {str(e)}")
@@ -126,6 +100,9 @@ async def get_document_detail(doc_id: str, rag: RAGEngine = Depends(get_rag)):
             raise HTTPException(status_code=404, detail="文档不存在")
 
         return detail
+    except ChromaUnavailableError as e:
+        logger.error(f"获取文档详情失败，ChromaDB 不可用: {e}", exc_info=True)
+        raise HTTPException(status_code=503, detail="文档存储服务暂时不可用，请稍后重试")
     except HTTPException:
         raise
     except Exception as e:
