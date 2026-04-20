@@ -6,6 +6,7 @@ from langchain_core.documents import Document
 from app.core.vector_store import VectorStoreManager, ChromaUnavailableError
 from app.services.document_service import DocumentService
 from app.services.chat_service import ChatService
+from app.services.chat_stream_service import ChatStreamService
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +30,7 @@ class RAGEngine:
         self.vector_store = VectorStoreManager()
         self.doc_service = DocumentService(self.vector_store)
         self.chat_service = ChatService(self.vector_store)
+        self.chat_stream_service = ChatStreamService(self.vector_store)
         self._init_error: Optional[str] = None
         self._initialized = True
 
@@ -76,6 +78,9 @@ class RAGEngine:
 
     def query(self, question: str, k: int = 4, session_id: str = "default_session") -> Dict[str, Any]:
         return self.chat_service.query(question, k, session_id)
+
+    def stream_query(self, question: str, k: int = 4, session_id: str = "default_session"):
+        return self.chat_stream_service.stream_query(question, k, session_id)
 
     def summarize(self, doc_id: str) -> str:
         return self.chat_service.summarize(doc_id)

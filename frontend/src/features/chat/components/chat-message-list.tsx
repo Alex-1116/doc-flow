@@ -36,20 +36,6 @@ export function ChatMessageList({ messages, isGenerating }: ChatMessageListProps
       {messages.map((message) => (
         <ChatMessageItem key={message.id} message={message} />
       ))}
-      
-      {isGenerating && (
-        <div className="flex gap-4">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-            <Bot className="h-6 w-6" />
-          </div>
-          <div className="flex flex-col gap-2 pt-2">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin text-primary" />
-              正在检索文档并生成回答...
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

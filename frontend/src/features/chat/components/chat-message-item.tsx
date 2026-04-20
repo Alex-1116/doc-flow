@@ -1,15 +1,31 @@
-import { Bot, FileText, User } from 'lucide-react';
+import { Bot, FileText, User, Loader2, Sparkles, Search, AlertCircle, ChevronDown, ChevronRight, CheckCircle2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/libs/utils';
-import { Message } from '../types';
+import { Message, AgentStep } from '../types';
+import { useState } from 'react';
 
 interface ChatMessageItemProps {
   message: Message;
 }
 
+function StepIcon({ status, isCurrent }: { status: AgentStep['status'], isCurrent: boolean }) {
+  if (!isCurrent) return <CheckCircle2 className="h-3.5 w-3.5 text-primary/70" />;
+  
+  switch (status) {
+    case 'analyzing': return <Sparkles className="h-3.5 w-3.5 animate-pulse text-primary" />;
+    case 'retrieving': return <Search className="h-3.5 w-3.5 animate-pulse text-primary" />;
+    case 'generating': return <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />;
+    case 'error': return <AlertCircle className="h-3.5 w-3.5 text-destructive" />;
+    default: return <CheckCircle2 className="h-3.5 w-3.5 text-primary" />;
+  }
+}
+
 export function ChatMessageItem({ message }: ChatMessageItemProps) {
   const isUser = message.role === 'user';
+  const [stepsExpanded, setStepsExpanded] = useState(false);
+  const hasSteps = message.steps && message.steps.length > 0;
+  const isGenerating = message.status === 'generating';
 
   return (
     <div className={cn('flex w-full gap-4', isUser ? 'flex-row-reverse' : 'flex-row')}>
@@ -33,6 +49,64 @@ export function ChatMessageItem({ message }: ChatMessageItemProps) {
           isUser ? 'items-end' : 'items-start'
         )}
       >
+        {!isUser && hasSteps && (
+          <div className="mb-1 w-full max-w-[280px] overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+            <button
+              onClick={() => setStepsExpanded(!stepsExpanded)}
+              className="flex w-full items-center gap-2 px-3 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50"
+            >
+              {stepsExpanded ? (
+                <ChevronDown className="h-3.5 w-3.5" />
+              ) : (
+                <ChevronRight className="h-3.5 w-3.5" />
+              )}
+              {message.status !== 'done' && message.status !== 'error' && !isGenerating ? (
+                <span className="flex items-center gap-1.5 text-primary">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  思考过程...
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3 w-3 text-primary/70" />
+                  已完成思考 ({message.steps?.length} 步)
+                </span>
+              )}
+            </button>
+
+            {stepsExpanded && (
+              <div className="border-t border-border bg-muted/10 px-3 py-3">
+                <div className="space-y-4">
+                  {message.steps?.map((step, idx) => {
+                    const isLastStep = idx === message.steps!.length - 1;
+                    const isCurrent = message.status !== 'done' && message.status !== 'generating' && isLastStep;
+                    
+                    return (
+                      <div key={idx} className="relative pl-6">
+                        {/* 连接线 */}
+                        {!isLastStep && (
+                          <div className="absolute left-[9px] top-5 h-full w-[2px] bg-border/60" />
+                        )}
+                        
+                        {/* 图标节点 */}
+                        <div className="absolute left-0 top-0 flex h-5 w-5 items-center justify-center rounded-full bg-background border border-border shadow-sm">
+                          <StepIcon status={step.status} isCurrent={isCurrent} />
+                        </div>
+                        
+                        <div className={cn(
+                          "text-xs leading-5 pt-0.5",
+                          isCurrent ? "text-foreground font-medium" : "text-muted-foreground"
+                        )}>
+                          {step.message}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         <div
           className={cn(
             'relative rounded-2xl px-5 py-3.5 text-[15px] leading-relaxed shadow-sm',
@@ -45,7 +119,18 @@ export function ChatMessageItem({ message }: ChatMessageItemProps) {
             <div className="whitespace-pre-wrap break-words">{message.content}</div>
           ) : (
             <div className="prose prose-slate max-w-none dark:prose-invert prose-p:leading-relaxed prose-pre:bg-muted prose-pre:text-muted-foreground break-words">
-              <ReactMarkdown>{message.content}</ReactMarkdown>
+              {message.content ? <ReactMarkdown>{message.content}</ReactMarkdown> : (!message.status || message.status === 'done' ? null : (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground h-6">
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      正在生成回答...
+                    </>
+                  ) : (
+                    <span className="animate-pulse">正在梳理逻辑...</span>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>

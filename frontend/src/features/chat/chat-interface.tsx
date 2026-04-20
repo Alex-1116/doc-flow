@@ -1,19 +1,36 @@
 import { useState, useRef, useEffect } from 'react';
-import { documentApi } from '@/api/document';
-import { Message, Document } from './types';
+import { documentApi, StreamChunk } from '@/api/document';
+import { Message, Document, AgentStep } from './types';
 import { ChatHeader } from './components/chat-header';
 import { ChatMessageList } from './components/chat-message-list';
 import { ChatInput } from './components/chat-input';
+
+import { useChatStore } from '@/store/useChatStore';
 
 interface ChatInterfaceProps {
   documents: Document[];
 }
 
+function mergeSteps(prevSteps: AgentStep[] | undefined, chunk: StreamChunk): AgentStep[] {
+  const steps = prevSteps || [];
+  // 如果当前状态是完成或正在生成答案，不再记录到思考步骤中
+  if (chunk.status === 'done' || chunk.status === 'generating') {
+    return steps;
+  }
+  // 防止重复记录相同的步骤
+  if (steps.some(s => s.message === chunk.message)) {
+    return steps;
+  }
+  return [...steps, { status: chunk.status, message: chunk.message }];
+}
+
 export default function ChatInterface({ documents }: ChatInterfaceProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // 使用全局状态管理对话和 Session
+  const { messages, sessionId, addMessage, updateMessage } = useChatStore();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -32,29 +49,42 @@ export default function ChatInterface({ documents }: ChatInterfaceProps) {
       content: input,
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    addMessage(userMessage);
     setInput('');
     setLoading(true);
 
+    const assistantId = (Date.now() + 1).toString();
+
     try {
-      const response = await documentApi.query(input, 4);
-
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
+      addMessage({
+        id: assistantId,
         role: 'assistant',
-        content: response.answer,
-        sources: response.sources,
-      };
+        content: '',
+        status: 'analyzing',
+        loadingMessage: '正在分析查询...',
+        steps: [],
+      });
 
-      setMessages((prev) => [...prev, assistantMessage]);
+      const stream = documentApi.streamQuery(input, 4, sessionId);
+
+      for await (const chunk of stream) {
+        updateMessage(assistantId, (msg) => ({
+          ...msg,
+          status: chunk.status,
+          loadingMessage: chunk.message,
+          content: chunk.answer || msg.content,
+          sources: chunk.sources || msg.sources,
+          steps: mergeSteps(msg.steps, chunk),
+        }));
+      }
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail || err.message || '处理您的问题时出现了错误';
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
+      updateMessage(assistantId, (msg) => ({
+        ...msg,
         content: `抱歉，${errorMessage}，请稍后重试。`,
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
+        status: 'error',
+        loadingMessage: undefined,
+      }));
       console.error('查询错误:', err);
     } finally {
       setLoading(false);
