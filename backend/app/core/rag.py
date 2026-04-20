@@ -10,6 +10,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 
 from app.core.config import settings
+from app.core.agent import build_rag_agent_graph
 from app.core.providers import (
     check_embeddings_health,
     check_llm_health,
@@ -306,7 +307,7 @@ class RAGEngine:
         }
 
     def query(self, question: str, k: int = 4) -> Dict[str, Any]:
-        """查询文档"""
+        """基于 LangGraph 架构查询文档"""
         # 问答同时依赖检索和生成，因此这里才会拉起 Embedding + LLM。
         self._ensure_chroma_client()
         self._ensure_text_splitter()
@@ -314,41 +315,35 @@ class RAGEngine:
         self._ensure_llm()
 
         vector_store = self.get_vector_store()
+        retriever = vector_store.as_retriever(search_kwargs={"k": k})
 
-        prompt_template = """基于以下上下文回答用户的问题。如果不知道答案，就说不知道，不要编造答案。
+        # 获取编译好的 LangGraph 执行图
+        app = build_rag_agent_graph(llm=self._llm, retriever=retriever)
 
-上下文:
-{context}
+        from langchain_core.messages import HumanMessage
+        # 执行 Graph
+        inputs = {
+            "documents": [], 
+            "k": k, 
+            "iterations": 0,
+            "messages": [HumanMessage(content=question)]
+        }
+        result = app.invoke(inputs)
 
-问题: {question}
-
-请用中文回答:"""
-
-        PROMPT = PromptTemplate(
-            template=prompt_template, input_variables=["context", "question"]
-        )
-
-        chain_type_kwargs = {"prompt": PROMPT}
-
-        qa_chain = RetrievalQA.from_chain_type(
-            llm=self._llm,
-            chain_type="stuff",
-            retriever=vector_store.as_retriever(search_kwargs={"k": k}),
-            chain_type_kwargs=chain_type_kwargs,
-            return_source_documents=True,
-        )
-
-        result = qa_chain.invoke({"query": question})
+        # 在标准 Tool Calling 架构中，最终回答存储在 messages 列表的最后一个元素中
+        final_answer = ""
+        if result.get("messages"):
+            final_answer = result["messages"][-1].content
 
         return {
-            "answer": result["result"],
+            "answer": final_answer,
             "sources": [
                 {
                     "content": doc.page_content[:200],
                     "metadata": doc.metadata,
                 }
-                for doc in result["source_documents"]
-            ],
+                for doc in result.get("documents", [])
+            ]
         }
 
     def summarize(self, doc_id: str) -> str:

@@ -118,11 +118,20 @@ export default function DocumentsPage() {
               <div className="rounded-2xl border border-border bg-muted/50 p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-background text-muted-foreground shadow-sm">
-                    <Database className="h-4 w-4" />
+                    {loading || deletingId ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    ) : (
+                      <Database className="h-4 w-4" />
+                    )}
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">数据状态</p>
-                    <p className="text-lg font-semibold text-foreground">已同步</p>
+                    <p className={cn(
+                      "text-lg font-semibold",
+                      loading || deletingId ? "text-primary" : "text-foreground"
+                    )}>
+                      {loading || deletingId ? "同步中..." : "已同步"}
+                    </p>
                   </div>
                 </div>
               </div>
