@@ -72,9 +72,24 @@ class AgentNodes:
         ))
         
         # 检查是否已经包含了系统提示词，如果没有，将其插在最前面
-        invoke_messages = messages
-        if not messages or not isinstance(messages[0], SystemMessage):
-            invoke_messages = [sys_msg] + messages
+        invoke_messages = list(messages)  # 创建副本以避免修改原始状态
+        
+        # 确保只有第一条消息是 SystemMessage，并且是我们定义的这个
+        if not invoke_messages or not isinstance(invoke_messages[0], SystemMessage):
+            invoke_messages.insert(0, sys_msg)
+        elif invoke_messages[0].content != sys_msg.content:
+            # 如果已经有 SystemMessage 但内容不对，替换它
+            invoke_messages[0] = sys_msg
+            
+        # ==========================================
+        # 滑动窗口记忆截断 (Sliding Window Memory)
+        # ==========================================
+        # 限制发给大模型的消息总数，避免 Token 爆炸和 Lost in the Middle 现象。
+        # 我们保留第一条 SystemMessage，以及最近的 10 条对话消息（相当于最近 5 轮对话）。
+        MAX_MESSAGES = 10
+        if len(invoke_messages) > MAX_MESSAGES + 1:
+            logger.info(f"触发滑动窗口记忆截断: 原消息数 {len(invoke_messages)}，截断为 {MAX_MESSAGES + 1}")
+            invoke_messages = [invoke_messages[0]] + invoke_messages[-MAX_MESSAGES:]
         
         # 调用大模型
         response = self.llm_with_tools.invoke(invoke_messages)

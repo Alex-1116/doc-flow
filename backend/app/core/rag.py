@@ -74,8 +74,8 @@ class RAGEngine:
     def get_document_detail(self, doc_id: str) -> Optional[Dict[str, Any]]:
         return self.doc_service.get_document_detail(doc_id)
 
-    def query(self, question: str, k: int = 4) -> Dict[str, Any]:
-        return self.chat_service.query(question, k)
+    def query(self, question: str, k: int = 4, session_id: str = "default_session") -> Dict[str, Any]:
+        return self.chat_service.query(question, k, session_id)
 
     def summarize(self, doc_id: str) -> str:
         return self.chat_service.summarize(doc_id)

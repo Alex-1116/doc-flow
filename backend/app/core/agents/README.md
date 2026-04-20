@@ -54,3 +54,20 @@ backend/app/core/agents/
 - **状态追加机制**: 状态字典中的 `messages` 字段使用了 `Annotated[List[BaseMessage], add_messages]`，确保每次新产生的消息都是**追加 (Append)** 而不是覆盖。
 - **死循环熔断**: 为了防止大模型在使用工具时陷入无限重试的死循环，每个 Agent 的路由节点都必须检查 `state["iterations"]`，超过阈值（如 5 次）必须强制返回 `END`。
 - **SystemMessage 规范**: 为大模型设定的人设和行为准则必须包装在 `SystemMessage` 中，并置于 `messages` 列表的首位，严禁伪装成 `HumanMessage`。
+
+
+
+### TODO：
+
+1. 内存共享问题（MemorySaver 只是单机版）
+
+- 现状 ：我们在 agents/main.py 里写了 _global_memory = MemorySaver() 。它是基于 Python 进程内存的。
+- 未来的坑 ：如果未来你用 gunicorn 部署，开了 4 个 Worker（工作进程）。用户发第一句话落到了 Worker 1，发第二句话落到了 Worker 2，Worker 2 是拿不到 Worker 1 的内存记忆的，会导致系统偶尔“失忆”。
+- 解法 ：当业务做大时，只需要把 MemorySaver() 换成 LangGraph 官方提供的 AsyncRedisSaver() ，把记忆存到 Redis 里，就瞬间支持分布式高并发了。
+2. 滑动窗口切断了“工具对（Tool Pairs）”
+
+- 现状 ：我们通过 invoke_messages[-10:] 粗暴地截取了最后 10 条消息。
+- 未来的坑 ：大模型调用工具时，总是成对出现的（一条 AIMessage(tool_calls=[...]) 紧接着一条 ToolMessage ）。如果 -10 刚好切在了它俩中间（比如保留了 ToolMessage 但丢弃了发起请求的 AIMessage ），OpenAI/Gemini 的 API 会报错： “遇到没有调用源的工具回复” 。
+- 解法 ：目前保留 10 条（5轮对话）足够宽裕，基本切不到当前的工具对。未来可以通过 LangChain 提供的 trim_messages 辅助函数来更安全地裁剪，它能识别并保持工具对的完整。
+
+

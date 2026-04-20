@@ -16,7 +16,7 @@ class ChatService:
         self.vsm = vector_store_manager
 
     @retry_with_backoff(max_retries=3, initial_delay=1.0)
-    def query(self, question: str, k: int = 4) -> Dict[str, Any]:
+    def query(self, question: str, k: int = 4, session_id: str = "default_session") -> Dict[str, Any]:
         """基于 LangGraph 架构查询文档"""
         vector_store = self.vsm.get_vector_store()
         retriever = vector_store.as_retriever(search_kwargs={"k": k})
@@ -27,7 +27,8 @@ class ChatService:
         # 获取包含多个子 Agent 的超级执行图
         app = get_docflow_agent(llm=llm, retriever=retriever)
 
-        # 执行 Super Graph
+        # 执行 Super Graph，传入 config 启用记忆
+        config = {"configurable": {"thread_id": session_id}}
         inputs = {
             "documents": [], 
             "k": k, 
@@ -36,7 +37,7 @@ class ChatService:
             "next_worker": "",
             "doc_id": None
         }
-        result = app.invoke(inputs)
+        result = app.invoke(inputs, config=config)
 
         # 无论最终是哪个子 Agent 执行的，结果都在 messages 列表的最后一个元素中
         final_answer = ""

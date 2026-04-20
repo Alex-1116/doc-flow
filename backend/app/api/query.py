@@ -23,7 +23,7 @@ async def query_documents(
         logger.info(f"开始查询: {request.question[:50]}...")
         result = await asyncio.wait_for(
             asyncio.get_event_loop().run_in_executor(
-                None, lambda: rag.query(request.question, request.k)
+                None, lambda: rag.query(request.question, request.k, request.session_id)
             ),
             timeout=settings.REQUEST_TIMEOUT
         )

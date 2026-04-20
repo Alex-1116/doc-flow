@@ -56,7 +56,7 @@ class SupervisorNodes:
 # ==========================================
 # 3. Graph Builder
 # ==========================================
-def build_supervisor_graph(llm, retriever):
+def build_supervisor_graph(llm, retriever, memory=None):
     """
     构建包含多个子 Agent 的超级图 (Super Graph)
     """
@@ -98,4 +98,8 @@ def build_supervisor_graph(llm, retriever):
     super_graph.add_edge("rag_agent", END)
     super_graph.add_edge("summary_agent", END)
     
-    return super_graph.compile()
+    if memory is None:
+        from langgraph.checkpoint.memory import MemorySaver
+        memory = MemorySaver()
+    
+    return super_graph.compile(checkpointer=memory)
