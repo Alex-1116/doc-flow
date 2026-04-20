@@ -6,23 +6,20 @@ import json
 from langchain_core.documents import Document
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage, BaseMessage, SystemMessage
 from langgraph.graph import StateGraph, END
-from langgraph.graph.message import add_messages
+from app.core.agents.shared import BaseAgentState
 
 logger = logging.getLogger(__name__)
 
 # ==========================================
 # 1. State Definition
 # ==========================================
-class AgentState(TypedDict):
+class RagAgentState(BaseAgentState):
     """
-    Agent 的核心状态，贯穿整个执行图。
-    引入 messages 列表以支持标准的 LangGraph 消息流转和记忆。
-    使用 Annotated 和 add_messages 聚合器，确保消息是追加（Append）而不是覆盖（Overwrite）。
+    RAG Agent 专属状态
+    继承自 BaseAgentState (包含 messages 和 iterations)
     """
-    messages: Annotated[List[BaseMessage], add_messages]
-    documents: List[Document]  # 兼容以前的 RAG 链路，暂时保留
-    k: int  # 检索的文档数量
-    iterations: int  # 循环控制：记录执行步数
+    documents: List[Document]  # RAG Agent 需要维护检索到的文档
+    k: int                     # 检索文档数量参数
 
 
 # ==========================================
@@ -58,7 +55,7 @@ class AgentNodes:
         # 将我们定义的工具说明书绑定给 LLM
         self.llm_with_tools = llm.bind_tools([search_tool_schema])
 
-    def agent_node(self, state: AgentState) -> Dict[str, Any]:
+    def agent_node(self, state: RagAgentState) -> Dict[str, Any]:
         """
         核心大脑节点：负责思考、对话，并决定是否调用工具。
         """
@@ -88,7 +85,7 @@ class AgentNodes:
         # 将大模型的回复（可能是普通文本，也可能是 ToolCall 请求）追加到消息列表中
         return {"messages": [response], "iterations": current_iterations + 1}
 
-    def tools_node(self, state: AgentState) -> Dict[str, Any]:
+    def tools_node(self, state: RagAgentState) -> Dict[str, Any]:
         """
         自定义工具执行节点：
         官方的 ToolNode 是黑盒，只返回字符串。我们自己实现这个节点，
@@ -140,7 +137,7 @@ class AgentNodes:
 # ==========================================
 # 3. Routers Definition
 # ==========================================
-def route_after_agent(state: AgentState) -> Literal["tools", "end"]:
+def route_after_agent(state: RagAgentState) -> Literal["tools", "end"]:
     """
     条件边（Conditional Edge）：根据 Agent 的输出决定是去执行工具，还是结束对话。
     """
@@ -175,7 +172,7 @@ def build_rag_agent_graph(llm, retriever):
     # 实例化节点管理器
     agent_nodes = AgentNodes(llm=llm, retriever=retriever)
     
-    workflow = StateGraph(AgentState)
+    workflow = StateGraph(RagAgentState)
     
     # 注册节点
     workflow.add_node("agent", agent_nodes.agent_node)

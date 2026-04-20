@@ -10,7 +10,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 
 from app.core.config import settings
-from app.core.agent import build_rag_agent_graph
+from app.core.agents.main import get_docflow_agent
 from app.core.providers import (
     check_embeddings_health,
     check_llm_health,
@@ -317,20 +317,22 @@ class RAGEngine:
         vector_store = self.get_vector_store()
         retriever = vector_store.as_retriever(search_kwargs={"k": k})
 
-        # 获取编译好的 LangGraph 执行图
-        app = build_rag_agent_graph(llm=self._llm, retriever=retriever)
+        # 获取包含多个子 Agent 的超级执行图
+        app = get_docflow_agent(llm=self._llm, retriever=retriever)
 
         from langchain_core.messages import HumanMessage
-        # 执行 Graph
+        # 执行 Super Graph
         inputs = {
             "documents": [], 
             "k": k, 
             "iterations": 0,
-            "messages": [HumanMessage(content=question)]
+            "messages": [HumanMessage(content=question)],
+            "next_worker": "",
+            "doc_id": None
         }
         result = app.invoke(inputs)
 
-        # 在标准 Tool Calling 架构中，最终回答存储在 messages 列表的最后一个元素中
+        # 无论最终是哪个子 Agent 执行的，结果都在 messages 列表的最后一个元素中
         final_answer = ""
         if result.get("messages"):
             final_answer = result["messages"][-1].content
