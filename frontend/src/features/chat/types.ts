@@ -3,6 +3,7 @@ export type AgentStatus = 'analyzing' | 'retrieving' | 'generating' | 'done' | '
 export interface AgentStep {
   status: AgentStatus;
   message: string;
+  details?: string;
 }
 
 export interface Message {

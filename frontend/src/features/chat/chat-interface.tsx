@@ -12,16 +12,28 @@ interface ChatInterfaceProps {
 }
 
 function mergeSteps(prevSteps: AgentStep[] | undefined, chunk: StreamChunk): AgentStep[] {
-  const steps = prevSteps || [];
+  const steps = prevSteps ? [...prevSteps] : [];
+  
   // 如果当前状态是完成或正在生成答案，不再记录到思考步骤中
   if (chunk.status === 'done' || chunk.status === 'generating') {
     return steps;
   }
-  // 防止重复记录相同的步骤
-  if (steps.some(s => s.message === chunk.message)) {
+  
+  // 查找是否已经存在相同 message 的步骤
+  const existingIndex = steps.findIndex(s => s.message === chunk.message);
+  
+  if (existingIndex !== -1) {
+    // 如果存在，并且 chunk 带来了新的 details，就更新这个步骤
+    if (chunk.details && !steps[existingIndex].details) {
+      steps[existingIndex] = { ...steps[existingIndex], details: chunk.details };
+      return steps;
+    }
+    // 否则认为是重复数据，直接返回
     return steps;
   }
-  return [...steps, { status: chunk.status, message: chunk.message }];
+  
+  // 如果不存在，添加新步骤
+  return [...steps, { status: chunk.status, message: chunk.message, details: chunk.details }];
 }
 
 export default function ChatInterface({ documents }: ChatInterfaceProps) {

@@ -84,7 +84,7 @@ export function ChatMessageItem({ message }: ChatMessageItemProps) {
                       <div key={idx} className="relative pl-6">
                         {/* 连接线 */}
                         {!isLastStep && (
-                          <div className="absolute left-[9px] top-5 h-full w-[2px] bg-border/60" />
+                          <div className="absolute left-[9.5px] top-6 -bottom-3 border-l border-border/60" />
                         )}
                         
                         {/* 图标节点 */}
@@ -97,6 +97,13 @@ export function ChatMessageItem({ message }: ChatMessageItemProps) {
                           isCurrent ? "text-foreground font-medium" : "text-muted-foreground"
                         )}>
                           {step.message}
+                          {step.details && (
+                            <div className="mt-2 rounded-md bg-background/50 p-2 text-[11px] font-mono overflow-auto max-h-40 border border-border/50">
+                              <ReactMarkdown className="prose prose-sm dark:prose-invert max-w-none prose-pre:bg-transparent prose-pre:m-0 prose-pre:p-0 prose-p:m-0">
+                                {step.details}
+                              </ReactMarkdown>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );

@@ -17,6 +17,7 @@ export interface QueryResponse {
 export interface StreamChunk {
   status: AgentStatus;
   message: string;
+  details?: string;
   answer?: string;
   sources?: Array<{ content: string; metadata: Record<string, string> }>;
 }
