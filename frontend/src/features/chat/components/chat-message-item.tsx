@@ -50,10 +50,10 @@ export function ChatMessageItem({ message }: ChatMessageItemProps) {
         )}
       >
         {!isUser && hasSteps && (
-          <div className="mb-1 w-full max-w-[280px] overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+          <div className="mb-1 w-fit max-w-[400px] overflow-hidden rounded-md border border-border bg-card shadow-sm">
             <button
               onClick={() => setStepsExpanded(!stepsExpanded)}
-              className="flex w-full items-center gap-2 px-3 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50"
+              className="flex w-full items-center gap-2 px-2 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50"
             >
               {stepsExpanded ? (
                 <ChevronDown className="h-3.5 w-3.5" />
@@ -74,8 +74,8 @@ export function ChatMessageItem({ message }: ChatMessageItemProps) {
             </button>
 
             {stepsExpanded && (
-              <div className="border-t border-border bg-muted/10 px-3 py-3">
-                <div className="space-y-4">
+              <div className="border-t border-border bg-muted/10 px-2 py-2">
+                <div className="space-y-3">
                   {message.steps?.map((step, idx) => {
                     const isLastStep = idx === message.steps!.length - 1;
                     const isCurrent = message.status !== 'done' && message.status !== 'generating' && isLastStep;
@@ -84,7 +84,7 @@ export function ChatMessageItem({ message }: ChatMessageItemProps) {
                       <div key={idx} className="relative pl-6">
                         {/* 连接线 */}
                         {!isLastStep && (
-                          <div className="absolute left-[9.5px] top-6 -bottom-3 border-l border-border/60" />
+                          <div className="absolute left-[9.5px] top-6 -bottom-2 border-l border-border/60" />
                         )}
                         
                         {/* 图标节点 */}

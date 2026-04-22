@@ -5,7 +5,7 @@ import { ChatHeader } from './components/chat-header';
 import { ChatMessageList } from './components/chat-message-list';
 import { ChatInput } from './components/chat-input';
 
-import { useChatStore } from '@/store/useChatStore';
+import { useChatStore, useActiveSession, useActiveMessages } from '@/store/useChatStore';
 
 interface ChatInterfaceProps {
   documents: Document[];
@@ -42,7 +42,12 @@ export default function ChatInterface({ documents }: ChatInterfaceProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // 使用全局状态管理对话和 Session
-  const { messages, sessionId, addMessage, updateMessage } = useChatStore();
+  const { addMessage, updateMessage } = useChatStore();
+  
+  // 使用我们刚刚封装的“高级派生语法”，直接无脑拿到当前激活的会话和消息
+  const activeSession = useActiveSession();
+  const messages = useActiveMessages();
+  const sessionId = activeSession?.id || '';
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -104,7 +109,7 @@ export default function ChatInterface({ documents }: ChatInterfaceProps) {
   };
 
   return (
-    <div className="flex h-full w-full flex-col bg-background rounded-2xl border border-border shadow-sm overflow-hidden">
+    <div className="flex h-full w-full flex-col bg-background md:rounded-2xl md:border md:border-border md:shadow-sm overflow-hidden">
       <ChatHeader documents={documents} />
       <div className="flex-1 bg-background/90 overflow-hidden">
         <ChatMessageList 

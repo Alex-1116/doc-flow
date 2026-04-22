@@ -82,7 +82,7 @@ export function ChatInput({ input, setInput, handleSend, disabled, placeholder }
             <Send className="h-4 w-4" />
           </Button>
         </form>
-        <div className="flex items-center justify-center gap-4 text-[11px] text-muted-foreground">
+        <div className="hidden md:flex items-center justify-center gap-4 text-[11px] text-muted-foreground">
           <span className="flex items-center gap-1">
             <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-sans text-[10px]">
               Enter

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Library, Search } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Library, Search, FileText, ExternalLink } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
 import { Document } from '../types';
@@ -50,11 +51,21 @@ export function ChatHeader({ documents }: ChatHeaderProps) {
                   {filteredDocuments.map((d) => (
                     <div
                       key={d.id}
-                      className="flex flex-col gap-1 rounded-xl px-3 py-2 transition-colors hover:bg-muted/80"
+                      className="group flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-muted/80"
                     >
-                      <span className="truncate text-sm font-medium text-foreground" title={d.name}>
-                        {d.name}
-                      </span>
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <FileText className="h-4 w-4 shrink-0 text-primary/70" />
+                        <span className="truncate text-sm font-medium text-foreground" title={d.name}>
+                          {d.name}
+                        </span>
+                      </div>
+                      <Link
+                        to="/documents"
+                        title="前往文档管理"
+                        className="flex-shrink-0 rounded-md p-1.5 opacity-0 transition-all hover:text-primary focus:opacity-100 group-hover:opacity-100"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </Link>
                     </div>
                   ))}
                 </div>

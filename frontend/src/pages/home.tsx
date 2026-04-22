@@ -24,7 +24,7 @@ export default function Home() {
 
   return (
     <div className="h-full flex flex-col bg-background overflow-hidden">
-      <main className="flex-1 overflow-hidden w-full max-w-5xl mx-auto px-6 py-6 flex flex-col">
+      <main className="flex-1 overflow-hidden w-full max-w-5xl mx-auto px-0 py-0 md:px-6 md:py-6 flex flex-col">
         {documents.length === 0 ? (
           <div className="flex flex-1 items-center justify-center">
             <div className="w-full max-w-xl rounded-3xl border border-border bg-card p-10 text-center shadow-sm">

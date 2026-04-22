@@ -1,7 +1,14 @@
-import { NavLink } from 'react-router-dom';
-import { FileText, Files, LayoutDashboard } from 'lucide-react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { FileText, Files, LayoutDashboard, MoreHorizontal } from 'lucide-react';
 import ThemeToggle from '@/features/theme/theme-toggle';
 import { cn } from '@/libs/utils';
+import { buttonVariants } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const navItems = [
   { to: '/home', label: '工作台', icon: LayoutDashboard },
@@ -9,6 +16,9 @@ const navItems = [
 ];
 
 export default function LayoutHeader() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
   return (
     <header className="sticky top-0 z-30 border-b border-border/80 bg-background/80 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/70">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4">
@@ -23,7 +33,8 @@ export default function LayoutHeader() {
         </div>
 
         <div className="flex items-center gap-3">
-          <nav className="flex items-center gap-1 rounded-full border border-border bg-muted/80 p-1">
+          {/* 桌面端导航 */}
+          <nav className="hidden md:flex items-center gap-1 rounded-full border border-border bg-muted/80 p-1">
             {navItems.map((item) => {
               const Icon = item.icon;
 
@@ -46,6 +57,34 @@ export default function LayoutHeader() {
               );
             })}
           </nav>
+
+          {/* 移动端导航（下拉菜单） */}
+          <div className="md:hidden">
+            <DropdownMenu>
+              <DropdownMenuTrigger className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }), "rounded-full")}>
+                <MoreHorizontal className="h-4 w-4 text-foreground" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-auto">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = location.pathname.startsWith(item.to);
+                  return (
+                    <DropdownMenuItem 
+                      key={item.to} 
+                      onClick={() => navigate(item.to)}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 cursor-pointer",
+                        isActive && "bg-muted text-violet-700 font-medium"
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {item.label}
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
           <ThemeToggle />
         </div>
