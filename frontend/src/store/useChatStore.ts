@@ -34,6 +34,11 @@ interface ChatStore {
   addMessage: (message: Message) => void;
   updateMessage: (id: string, updateFn: (msg: Message) => Message) => void;
   clearMessages: () => void;
+  
+  // UI 状态
+  isSidebarPinned: boolean;
+  toggleSidebarPinned: () => void;
+  setSidebarPinned: (pinned: boolean) => void;
 }
 
 // - crypto 对象 ：这是现代浏览器提供的一个内置的、用于加密和生成强随机数的 Web API。
@@ -112,6 +117,11 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       })
     };
   }),
+
+  // UI 状态
+  isSidebarPinned: false,
+  toggleSidebarPinned: () => set((state) => ({ isSidebarPinned: !state.isSidebarPinned })),
+  setSidebarPinned: (pinned: boolean) => set({ isSidebarPinned: pinned }),
 }));
 
 // ==========================================

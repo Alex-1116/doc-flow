@@ -4,6 +4,7 @@ import { Library, Search, FileText, ExternalLink } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
 import { Document } from '../types';
+import { ChatSidebarToggle } from './chat-sidebar-toggle';
 
 interface ChatHeaderProps {
   documents: Document[];
@@ -19,9 +20,11 @@ export function ChatHeader({ documents }: ChatHeaderProps) {
   if (documents.length === 0) return null;
 
   return (
-    <div className="flex items-center justify-between border-b border-border bg-primary/5 px-6 py-3">
+    <div className="flex h-[60px] items-center justify-between border-b border-border bg-primary/5 px-4">
       <div className="flex items-center gap-3">
-        <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">当前知识库</span>
+        <ChatSidebarToggle />
+
+        <span className="hidden md:inline whitespace-nowrap text-sm font-medium text-muted-foreground">当前知识库</span>
         <Popover>
           <PopoverTrigger>
             <div className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground transition-all duration-200 hover:border-primary/50 hover:bg-muted hover:text-primary hover:shadow-sm">
