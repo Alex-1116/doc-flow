@@ -4,6 +4,7 @@ import { Message, Document, AgentStep } from './types';
 import { ChatHeader } from './components/chat-header';
 import { ChatMessageList } from './components/chat-message-list';
 import { ChatInput } from './components/chat-input';
+import { ChatMinimap } from './components/chat-minimap';
 
 import { useChatStore, useActiveSession, useActiveMessages } from '@/store/useChatStore';
 
@@ -128,6 +129,8 @@ export default function ChatInterface({ documents }: ChatInterfaceProps) {
             : '输入您的问题，基于已选知识库提问...'
         }
       />
+      {/* 右侧缩略图标尺线 */}
+      <ChatMinimap messages={messages} />
     </div>
   );
 }

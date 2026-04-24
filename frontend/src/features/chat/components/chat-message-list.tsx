@@ -32,7 +32,7 @@ export function ChatMessageList({ messages, isGenerating }: ChatMessageListProps
     }
 
   return (
-    <div ref={scrollRef} className="flex h-full flex-col gap-6 overflow-y-auto p-6 scrollbar-thin">
+    <div id="chat-scroll-container" ref={scrollRef} className="flex h-full flex-col gap-6 overflow-y-auto p-6 scrollbar-thin">
       {messages.map((message) => (
         <ChatMessageItem key={message.id} message={message} />
       ))}

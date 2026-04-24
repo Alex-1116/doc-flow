@@ -28,7 +28,7 @@ export function ChatMessageItem({ message }: ChatMessageItemProps) {
   const isGenerating = message.status === 'generating';
 
   return (
-    <div className={cn('flex w-full gap-4', isUser ? 'flex-row-reverse' : 'flex-row')}>
+    <div id={`message-${message.id}`} className={cn('chat-message-item flex w-full gap-4', isUser ? 'flex-row-reverse chat-message-user' : 'flex-row chat-message-assistant')}>
       <div className="flex shrink-0 items-start">
         <Avatar className="h-10 w-10 border border-border shadow-sm">
           {isUser ? (
