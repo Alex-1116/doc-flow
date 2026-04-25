@@ -37,7 +37,7 @@ export function ChatSidebarToggle() {
           >
             <PanelLeft className="h-5 w-5" />
           </Button>
-          <SheetContent side="left" className="w-72 p-0 flex flex-col border-r border-border bg-background/80 backdrop-blur-xl">
+          <SheetContent side="left" className="flex flex-col border-r border-border bg-background/80 backdrop-blur-xl">
             <SheetHeader className="h-[60px] border-b border-border/50 p-4 flex flex-row items-center justify-between space-y-0 bg-transparent pr-4 md:pr-12">
               <SheetTitle className="text-sm font-semibold">会话历史</SheetTitle>
               {/* 只在桌面端显示固定按钮 */}
