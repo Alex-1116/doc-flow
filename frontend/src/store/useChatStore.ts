@@ -54,21 +54,50 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   clearDocuments: () => set({ documents: [] }),
   
   // 会话状态
-  sessions: [{ id: generateSessionId(), title: '新对话', updatedAt: Date.now(), messages: [] }],
+  sessions: [
+    { id: generateSessionId(), title: '今天的新对话', updatedAt: Date.now(), messages: [] },
+    { id: generateSessionId(), title: '前天的问题探讨', updatedAt: Date.now() - 2 * 24 * 60 * 60 * 1000, messages: [] },
+    { id: generateSessionId(), title: '上周的系统架构设计', updatedAt: Date.now() - 8 * 24 * 60 * 60 * 1000, messages: [] },
+    { id: generateSessionId(), title: '关于项目重构的讨论', updatedAt: Date.now() - 15 * 24 * 60 * 60 * 1000, messages: [] },
+    { id: generateSessionId(), title: '去年的老代码分析', updatedAt: Date.now() - 40 * 24 * 60 * 60 * 1000, messages: [] },
+  ],
   activeSessionId: null as string | null,
 
   setActiveSession: (id: string) => set({ activeSessionId: id }),
   
   createNewSession: () => {
-    const newSession = { id: generateSessionId(), title: '新对话', updatedAt: Date.now(), messages: [] };
-    set((state) => ({
-      sessions: [newSession, ...state.sessions],
-      activeSessionId: newSession.id,
-    }));
+    set((state) => {
+      // 检查是否已经存在一个空的“新对话”
+      const existingEmptySession = state.sessions.find(
+        s => s.title === '新对话' && s.messages.length === 0
+      );
+
+      // 如果已经有空的“新对话”，直接激活它，不再重复创建
+      if (existingEmptySession) {
+        return { activeSessionId: existingEmptySession.id };
+      }
+
+      // 否则创建新的空对话
+      const newSession = { id: generateSessionId(), title: '新对话', updatedAt: Date.now(), messages: [] };
+      return {
+        sessions: [newSession, ...state.sessions],
+        activeSessionId: newSession.id,
+      };
+    });
   },
   
   deleteSession: (id: string) => set((state) => {
     const newSessions = state.sessions.filter(s => s.id !== id);
+    
+    // 如果删除后没有会话了，自动创建一个新的空会话
+    if (newSessions.length === 0) {
+      const emptySession = { id: generateSessionId(), title: '新对话', updatedAt: Date.now(), messages: [] };
+      return {
+        sessions: [emptySession],
+        activeSessionId: emptySession.id
+      };
+    }
+    
     return {
       sessions: newSessions,
       activeSessionId: state.activeSessionId === id ? (newSessions[0]?.id || null) : state.activeSessionId
