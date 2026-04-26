@@ -3,7 +3,7 @@ import asyncio
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import JSONResponse, StreamingResponse
 
-from app.models.schemas import QueryRequest
+from app.schemas.query import QueryRequest
 from app.core.config import settings
 from app.core.rag import get_rag_engine, RAGEngine
 

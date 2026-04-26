@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from app.models.schemas import HealthResponse
+from app.schemas.health import HealthResponse
 from app.core.rag import get_rag_engine, RAGEngine
 
 router = APIRouter()

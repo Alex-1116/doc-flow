@@ -8,32 +8,23 @@ from fastapi.middleware.cors import CORSMiddleware
 import httpx
 
 from app.core.config import settings
-from app.api import api_router
+from app.core.logger import setup_logging, get_logger
+from app.api.v1.api import api_router
+from app.db.database import init_db
+import app.db.models  # 确保所有 SQLAlchemy 模型在 init_db 之前被导入
 
-# 配置日志
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
-logger = logging.getLogger(__name__)
-
-# Chroma 在部分版本组合下即使关闭 anonymized telemetry 仍会输出 Posthog 噪音日志。
-# 这里直接静音相关 logger，避免污染控制台和误导排查。
-for noisy_logger_name in (
-    "chromadb.telemetry.product.posthog",
-    "chromadb.telemetry.product",
-    "posthog",
-):
-    noisy_logger = logging.getLogger(noisy_logger_name)
-    noisy_logger.disabled = True
-    noisy_logger.propagate = False
-    noisy_logger.setLevel(logging.CRITICAL)
+# 统一配置全局日志（包括静音 Chroma 噪音等）
+setup_logging()
+logger = get_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
     # 启动时执行
     logger.info("正在启动 DocFlow API...")
+
+    # 初始化数据库
+    await init_db()
 
     # 创建上传目录
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
@@ -67,4 +58,4 @@ app.add_middleware(
 )
 
 # 注册 API 路由
-app.include_router(api_router, prefix="/api")
+app.include_router(api_router, prefix="/api/v1")

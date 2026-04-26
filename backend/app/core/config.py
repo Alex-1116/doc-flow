@@ -41,6 +41,15 @@ class Settings(BaseSettings):
     MAX_CONCURRENT_UPLOADS: int = int(env_or_default("MAX_CONCURRENT_UPLOADS", "3"))
     REQUEST_TIMEOUT: int = int(env_or_default("REQUEST_TIMEOUT", "300"))  # 5分钟
 
+    # JWT 与 安全配置
+    SECRET_KEY: str = env_or_default("SECRET_KEY", "your-super-secret-key-please-change-in-production")
+    ALGORITHM: str = env_or_default("ALGORITHM", "HS256")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(env_or_default("ACCESS_TOKEN_EXPIRE_MINUTES", str(30 * 24 * 60)))  # 默认 30 天
+
+    # 关系型数据库配置
+    DB_DIR: str = env_or_default("DB_DIR", "data")
+    DATABASE_URL: str = env_or_default("DATABASE_URL", "") # 如果为空，则由 database.py 自行拼接 SQLite 路径
+
     class Config:
         env_file = ".env"
 

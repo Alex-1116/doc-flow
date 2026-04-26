@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 
 from app.core.config import settings
 from app.core.rag import ChromaUnavailableError, get_rag_engine, RAGEngine
-from app.models.schemas import DocumentDetailResponse
+from app.schemas.document import DocumentDetailResponse
 from app.services.parsers import DocumentParser
 from app.utils.file import managed_temp_file
 

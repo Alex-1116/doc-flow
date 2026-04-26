@@ -39,10 +39,10 @@ export const getApiUrl = (): string => {
 export const API_URL = getApiUrl();
 
 export const API_ENDPOINTS = {
-  health: `${API_URL}/api/health`,
-  upload: `${API_URL}/api/documents/upload`,
-  query: `${API_URL}/api/query`,
-  documents: `${API_URL}/api/documents`,
+  health: `${API_URL}/api/v1/health`,
+  upload: `${API_URL}/api/v1/documents/upload`,
+  query: `${API_URL}/api/v1/query`,
+  documents: `${API_URL}/api/v1/documents`,
 } as const;
 
 // 请求超时配置 (毫秒)
