@@ -8,7 +8,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/libs/utils';
-import { useDocuments } from '@/pages/documents/hooks/use-documents';
+import { useDocuments } from '@/pages/documents/hooks/useDocuments';
 
 export default function DocumentsPage() {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');

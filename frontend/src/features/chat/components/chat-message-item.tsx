@@ -28,7 +28,9 @@ export function ChatMessageItem({ message }: ChatMessageItemProps) {
   const isGenerating = message.status === 'generating';
 
   return (
-    <div id={`message-${message.id}`} className={cn('chat-message-item flex w-full gap-4', isUser ? 'flex-row-reverse chat-message-user' : 'flex-row chat-message-assistant')}>
+    // 当浏览器执行 scrollIntoView({ block: 'start' }) 时，它会读取目标元素身上的 scroll-margin 属性，并自动帮你保留出这段空隙
+    // 为元素顶部保留 24px (6 * 4px) 的呼吸空间，避免消息内容直接紧贴滚动容器的上沿
+    <div id={`message-${message.id}`} className={cn('chat-message-item flex w-full gap-4 scroll-mt-6', isUser ? 'flex-row-reverse chat-message-user' : 'flex-row chat-message-assistant')}>
       <div className="flex shrink-0 items-start">
         <Avatar className="h-10 w-10 border border-border shadow-sm">
           {isUser ? (

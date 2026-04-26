@@ -42,7 +42,6 @@ function mergeSteps(prevSteps: AgentStep[] | undefined, chunk: StreamChunk): Age
 export default function ChatInterface({ documents }: ChatInterfaceProps) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // 使用全局状态管理对话和 Session
   const { addMessage, updateMessage, isSidebarPinned } = useChatStore();
@@ -51,14 +50,6 @@ export default function ChatInterface({ documents }: ChatInterfaceProps) {
   const activeSession = useActiveSession();
   const messages = useActiveMessages();
   const sessionId = activeSession?.id || '';
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
 
   const handleSend = async () => {
     if (!input.trim() || loading) return;

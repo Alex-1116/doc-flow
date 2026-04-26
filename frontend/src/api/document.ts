@@ -74,11 +74,21 @@ export const documentApi = {
   // 流式查询文档
   streamQuery: async function* (question: string, k: number = 4, sessionId: string = "default_session"): AsyncGenerator<StreamChunk, void, unknown> {
     const streamUrl = API_ENDPOINTS.query.replace('/query', '/query_stream');
+    
+    // 动态读取并注入全局 Token (与 apiClient 拦截器逻辑保持一致)
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+    
+    // 预留：统一添加鉴权 Token
+    // const token = localStorage.getItem('token');
+    // if (token) {
+    //   headers['Authorization'] = `Bearer ${token}`;
+    // }
+
     const response = await fetch(streamUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({ question, k, session_id: sessionId }),
     });
 

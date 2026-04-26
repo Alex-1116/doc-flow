@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { documentApi, type DocumentDetailResponse } from '@/api/document';
-import { useChatStore, type Document } from '@/store/useChatStore';
+import { useDocumentStore, type Document } from '@/store/useDocumentStore';
 
 export function useDocuments() {
-  const documents = useChatStore((state) => state.documents);
-  const addDocument = useChatStore((state) => state.addDocument);
-  const setDocuments = useChatStore((state) => state.setDocuments);
-  const removeDocument = useChatStore((state) => state.removeDocument);
+  const documents = useDocumentStore((state) => state.documents);
+  const addDocument = useDocumentStore((state) => state.addDocument);
+  const setDocuments = useDocumentStore((state) => state.setDocuments);
+  const removeDocument = useDocumentStore((state) => state.removeDocument);
 
   const [loading, setLoading] = useState(true);
   const [previewLoading, setPreviewLoading] = useState(false);

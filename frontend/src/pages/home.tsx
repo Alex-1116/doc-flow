@@ -3,13 +3,14 @@ import { Link } from 'react-router-dom';
 import { Files, MessageSquare } from 'lucide-react';
 import ChatInterface from '@/features/chat/chat-interface';
 import { useChatStore } from '@/store/useChatStore';
+import { useDocumentStore } from '@/store/useDocumentStore';
 import { documentApi } from '@/api/document';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/libs/utils';
 
 export default function Home() {
-  const documents = useChatStore((state) => state.documents);
-  const setDocuments = useChatStore((state) => state.setDocuments);
+  const documents = useDocumentStore((state) => state.documents);
+  const setDocuments = useDocumentStore((state) => state.setDocuments);
   const isSidebarPinned = useChatStore((state) => state.isSidebarPinned);
 
   useEffect(() => {

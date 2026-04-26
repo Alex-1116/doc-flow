@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/libs/utils';
-import type { Document } from '@/store/useChatStore';
+import type { Document } from '@/store/useDocumentStore';
 
 interface DocumentListProps {
   documents: Document[];

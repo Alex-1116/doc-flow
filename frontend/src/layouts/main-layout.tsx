@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import LayoutHeader from '@/layouts/header';
+import { ErrorBoundary } from '@/components/error-boundary';
 
 export default function MainLayout() {
   return (
@@ -7,7 +8,9 @@ export default function MainLayout() {
       <LayoutHeader />
 
       <main className="flex min-h-0 w-full flex-1 flex-col overflow-x-hidden overflow-y-auto">
-        <Outlet />
+        <ErrorBoundary>
+          <Outlet />
+        </ErrorBoundary>
       </main>
     </div>
   );

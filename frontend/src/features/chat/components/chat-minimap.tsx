@@ -42,7 +42,7 @@ export function ChatMinimap({ messages }: ChatMinimapProps) {
   const scrollToMessage = (id: string) => {
     const el = document.getElementById(`message-${id}`);
     if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
