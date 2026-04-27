@@ -34,11 +34,10 @@ export function useChatSidebar(sessions: Session[]) {
       const time = new Date(session.updatedAt).getTime();
       const dateObj = new Date(session.updatedAt);
       
-      // YYYY-MM-DD 格式
+      // YYYY-MM 格式（用于排序的 Key）
       const year = dateObj.getFullYear();
       const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-      const day = String(dateObj.getDate()).padStart(2, '0');
-      const dateStr = `${year}-${month}-${day}`;
+      const monthKey = `${year}-${month}`;
 
       if (time >= todayStart) {
         groups['今日'].push(session);
@@ -47,10 +46,10 @@ export function useChatSidebar(sessions: Session[]) {
       } else if (time >= thirtyDaysAgo) {
         groups['一个月内'].push(session);
       } else {
-        if (!groups[dateStr]) {
-          groups[dateStr] = [];
+        if (!groups[monthKey]) {
+          groups[monthKey] = [];
         }
-        groups[dateStr].push(session);
+        groups[monthKey].push(session);
       }
     });
 
@@ -59,14 +58,23 @@ export function useChatSidebar(sessions: Session[]) {
     if (groups['七日内'].length > 0) result.push({ label: '七日内', sessions: groups['七日内'] });
     if (groups['一个月内'].length > 0) result.push({ label: '一个月内', sessions: groups['一个月内'] });
 
-    // 其他具体日期的分组
-    const olderDates = Object.keys(groups)
+    // 其他月份的分组（利用 YYYY-MM 字符串降序排列）
+    const olderMonthKeys = Object.keys(groups)
       .filter(k => k !== '今日' && k !== '七日内' && k !== '一个月内')
-      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+      .sort((a, b) => b.localeCompare(a));
 
-    olderDates.forEach(date => {
-      if (groups[date].length > 0) {
-        result.push({ label: date, sessions: groups[date] });
+    olderMonthKeys.forEach(monthKey => {
+      if (groups[monthKey].length > 0) {
+        const [y, m] = monthKey.split('-');
+        const yearNum = parseInt(y, 10);
+        const monthNum = parseInt(m, 10);
+        
+        // 如果是今年，显示 "X月"，否则显示 "XXXX年X月"
+        const label = yearNum === now.getFullYear() 
+          ? `${monthNum}月` 
+          : `${yearNum}年${monthNum}月`;
+          
+        result.push({ label, sessions: groups[monthKey] });
       }
     });
 

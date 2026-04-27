@@ -12,6 +12,7 @@ export default function Home() {
   const documents = useDocumentStore((state) => state.documents);
   const setDocuments = useDocumentStore((state) => state.setDocuments);
   const isSidebarPinned = useChatStore((state) => state.isSidebarPinned);
+  const fetchSessions = useChatStore((state) => state.fetchSessions);
 
   useEffect(() => {
     // 页面加载时获取已有的文档列表
@@ -22,7 +23,10 @@ export default function Home() {
     }).catch((err) => {
       console.error('获取文档列表失败:', err);
     });
-  }, [setDocuments]);
+
+    // 页面加载时获取聊天会话列表
+    fetchSessions();
+  }, [setDocuments, fetchSessions]);
 
   return (
     <div className="h-full flex flex-col bg-background overflow-hidden">

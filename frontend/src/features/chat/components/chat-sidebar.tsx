@@ -12,14 +12,12 @@ import { cn } from '@/libs/utils';
 // --- 抽离的独立 SessionItem 组件 ---
 // 使用 React.memo 包裹，只有当它的 props 发生变化时（比如它自己变成了 active，或者自己的 title 变化了），它才会重新渲染
 const SessionItem = memo(({ 
-  session, 
   isActive, 
   displayTitle, 
   canDelete, 
   onSelect, 
   onDelete 
 }: { 
-  session: any; 
   isActive: boolean; 
   displayTitle: string; 
   canDelete: boolean;
@@ -65,12 +63,13 @@ SessionItem.displayName = 'SessionItem';
 
 export function ChatSidebar({ onClose }: { onClose?: () => void }) {
   // 1. 提取基础状态和方法（使用 useShallow 避免无关状态更新触发重渲染）
-  const { activeSessionId, setActiveSession, createNewSession, deleteSession } = useChatStore(
+  const { activeSessionId, setActiveSession, createNewSession, deleteSession, isLoadingSessions } = useChatStore(
     useShallow((state) => ({
       activeSessionId: state.activeSessionId,
       setActiveSession: state.setActiveSession,
       createNewSession: state.createNewSession,
       deleteSession: state.deleteSession,
+      isLoadingSessions: state.isLoadingSessions,
     }))
   );
 
@@ -127,7 +126,18 @@ export function ChatSidebar({ onClose }: { onClose?: () => void }) {
       <div className="flex-1 overflow-hidden group/sidebar-scroll">
         <ScrollArea className="h-full px-3 [&_[data-slot=scroll-area-scrollbar]]:opacity-0 [&_[data-slot=scroll-area-scrollbar]]:transition-opacity [&_[data-slot=scroll-area-scrollbar]]:duration-300 group-hover/sidebar-scroll:[&_[data-slot=scroll-area-scrollbar]]:opacity-100">
           <div className="space-y-6 pb-4">
-            {groupedSessions.length === 0 ? (
+            {isLoadingSessions ? (
+              <div className="space-y-4 px-3 py-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
+                    <div className="space-y-2 flex-1">
+                      <div className="h-4 w-3/4 bg-muted rounded animate-pulse" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : groupedSessions.length === 0 ? (
               <div className="text-center text-sm text-muted-foreground py-8">
                 {searchQuery ? "未找到匹配的会话" : "暂无历史记录"}
               </div>
@@ -151,7 +161,6 @@ export function ChatSidebar({ onClose }: { onClose?: () => void }) {
                     return (
                       <SessionItem
                         key={session.id}
-                        session={session}
                         isActive={isActive}
                         displayTitle={displayTitle}
                         canDelete={canDelete}

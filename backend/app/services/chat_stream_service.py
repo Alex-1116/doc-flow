@@ -6,6 +6,9 @@ from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 
 from app.core.agents.main import get_docflow_agent
 from app.core.vector_store import VectorStoreManager
+from app.db.database import AsyncSessionLocal
+from app.db.crud.chat import chat_message, chat_session
+from app.schemas.chat import ChatMessageCreate, ChatSessionCreate
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +17,28 @@ class ChatStreamService:
         self.vsm = vector_store_manager
 
     async def stream_query(self, question: str, k: int = 4, session_id: str = "default_session") -> AsyncGenerator[str, None]:
+        # 校验 session_id，如果是空字符串则自动生成
+        if not session_id:
+            from app.utils.common import generate_uuid
+            session_id = generate_uuid()
+            
+        # 自动在数据库中记录 User 的消息
+        async with AsyncSessionLocal() as db:
+            session = await chat_session.get(db, id=session_id)
+            if not session:
+                # 自动创建 session，以第一条消息截断作为 title
+                title = question[:15] + "..." if len(question) > 15 else question
+                # 使用底层 ORM 或 CRUD 方法手动指定 ID
+                from app.db.models.chat import ChatSession
+                db_session = ChatSession(id=session_id, title=title)
+                db.add(db_session)
+                await db.commit()
+            
+            await chat_message.create(
+                db, 
+                obj_in=ChatMessageCreate(session_id=session_id, role="user", content=question)
+            )
+
         vector_store = self.vsm.get_vector_store()
         retriever = vector_store.as_retriever(search_kwargs={"k": k})
         llm = self.vsm.get_llm()
@@ -88,6 +113,17 @@ class ChatStreamService:
                 {"content": doc.page_content[:200], "metadata": doc.metadata}
                 for doc in final_state.get("documents", [])
             ]
+            
+            # 自动在数据库中记录 AI 的回复消息
+            async with AsyncSessionLocal() as db:
+                await chat_message.create(
+                    db,
+                    obj_in=ChatMessageCreate(
+                        session_id=session_id, 
+                        role="assistant", 
+                        content=final_answer
+                    )
+                )
             
         yield json.dumps({
             "status": "done", 

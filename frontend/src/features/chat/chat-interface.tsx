@@ -44,7 +44,7 @@ export default function ChatInterface({ documents }: ChatInterfaceProps) {
   const [loading, setLoading] = useState(false);
 
   // 使用全局状态管理对话和 Session
-  const { addMessage, updateMessage, isSidebarPinned } = useChatStore();
+  const { addMessage, updateMessage, isSidebarPinned, createNewSession } = useChatStore();
 
   // 使用我们刚刚封装的“高级派生语法”，直接无脑拿到当前激活的会话和消息
   const activeSession = useActiveSession();
@@ -53,6 +53,17 @@ export default function ChatInterface({ documents }: ChatInterfaceProps) {
 
   const handleSend = async () => {
     if (!input.trim() || loading) return;
+
+    let currentSessionId = sessionId;
+    if (!currentSessionId) {
+      // 容错处理：如果没有激活的会话（例如处于非常边缘的空状态），自动创建一个并获取其 ID
+      currentSessionId = createNewSession();
+      
+      if (!currentSessionId) {
+        console.error("无法创建新会话，放弃发送消息");
+        return;
+      }
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -76,7 +87,7 @@ export default function ChatInterface({ documents }: ChatInterfaceProps) {
         steps: [],
       });
 
-      const stream = documentApi.streamQuery(input, 4, sessionId);
+      const stream = documentApi.streamQuery(input, 4, currentSessionId);
 
       for await (const chunk of stream) {
         updateMessage(assistantId, (msg) => ({
